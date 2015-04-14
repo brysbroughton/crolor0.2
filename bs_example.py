@@ -1,5 +1,4 @@
-from get_doc_example import *
-#an http request is now stored in variable resbytes
+from get_doc_example import * #an http request is now stored in variable resbytes
 from bs4 import BeautifulSoup as bs
 
 soup = bs(resbytes)

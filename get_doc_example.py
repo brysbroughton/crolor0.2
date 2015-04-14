@@ -1,7 +1,7 @@
 import httplib
 
 conn = httplib.HTTPConnection('www.otc.edu')
-conn.request('GET','/webservices/webservices.php')
+conn.request('GET','/online/online.php')
 response = conn.getresponse()
 resbytes = response.read()
 
