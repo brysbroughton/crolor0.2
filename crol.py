@@ -1,7 +1,8 @@
 
 class generic_type(object):
     """
-    General template for associating properties to actions. To be extended by other crol classes.
+    General template for associating properties to actions.
+    To be extended by other crol classes.
 
     type: generic
     
@@ -17,19 +18,20 @@ class generic_type(object):
         for key, val in self.props.iteritems():
             print "%s : %s" % (key, val)
 
-    def __extend_props__(self, key, value):
+    def __extend_props__(self, key, value=None):
         self.props[key] = value
 
     def __init__(self, **kwargs):
-        self.props = {'type' : 'generic'}
+        self.props = self.props or {'type' : 'generic'}
         self.args = kwargs
+        self.__use_args__()
 
     def __use_args__(self):
         for key, val in self.args.iteritems():
             if self.props.has_key(key):
                 self.props[key] = val
             else:
-                raise Exception('%s object has no property: %s' % self.props['type'], key)
+                raise Exception('%s object has no property: %s' % (self.props['type'], key))
 
 
 
@@ -43,13 +45,18 @@ class registration(generic_type):
     
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, kwargs={}):
+        self.props = {
+            'type' : 'registration',
+            'department' : None,
+            'site' : None,
+            'actions' : []
+        }
+
         super(registration, self).__init__(**kwargs)
-        self.set_property('type', 'registration')
-        self.__extend_props__('department', None)
-        self.__extend_props__('site', '')
-        self.__extend_props__('actions', [])
-        self.__use_args__()
+
+        if self.props['department']:
+            self.props['department'] = department(self.props['department'])
 
         
 
@@ -64,13 +71,15 @@ class department(generic_type):
     
     """
 
-    def __init__(self, **kwargs):
+    def __init__(self, kwargs={}):
+        self.props = {
+            'type' : 'department',
+            'name' : None,
+            'main_email' : None,
+            'email_group' : []
+        }
+
         super(department, self).__init__(**kwargs)
-        self.set_property('type', 'department')
-        self.__extend_props__('name', 'unnamed department')
-        self.__extend_props__('main_email', 'web@otc.edu')
-        self.__extend_props__('email_group', [])
-        self.__use_args__()
 
 
 
@@ -80,9 +89,16 @@ class registry(generic_type):
     Object handles the listing of sites to crawl and associates them to departments.
     """
 
+    def __init__(self, kwargs={}):
+        self.props = {
+            'type' : 'registry',
+            'registrations' : []
+        }
 
-    def __init__(self, *args):
-        self.__extend_props__('registrations', [])
+        super(registry, self).__init__(**kwargs)
+
+        if self.props['registrations']:
+            self.props['registrations'] = [registration(r) for r in self.props['registrations']]
 
 
 
