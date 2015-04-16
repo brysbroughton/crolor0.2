@@ -1,4 +1,3 @@
-import crol
 
 registry_data = {
     'registrations' : [
@@ -29,4 +28,4 @@ registry_data = {
     ]
 }
 
-reg = crol.registry(registry_data)
+
