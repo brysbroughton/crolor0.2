@@ -185,6 +185,8 @@ class node(generic_type):
         self.props = {
             'type' : 'node',
             'url' : None,
+            'status' : None,
+            'reason' : None,
             'urlparse' : None,
             'links' : [],
             'parent': None,
@@ -227,7 +229,7 @@ class node(generic_type):
                 new_parsed.netloc or self.urlparse.netloc,
                 new_path,
                 #';'+new_parsed.params,
-                '?'+new_parsed.query,
+                #'?'+new_parsed.query,
                 #'#'+new_parsed.fragment
             ]
         except AttributeError as AEX:
