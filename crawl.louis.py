@@ -16,7 +16,11 @@ class crawl:
             parse_link_in = urlparse(link_in)
             if not parse_link_in.netloc:
                 raise Exception("Can't follow link with invalid host %s" % link_in)
-    
+            else:
+                request_page()
+                scrape_links()
+                cleanse_links()
+                compile_statuses()
     
     def normalize_link(self, link):
         """
@@ -45,14 +49,13 @@ class crawl:
         
         print response.status
         print response.reason
+        print 'REQUEST COMPLETE'
     
-    def scrape_links(self, links):
+    def scrape_links(self):
         """
         Use beautiful soup to get all the links off of the page.
-        Return as list
         """
-        self.links = links
-        soup = bs(resbytes)
+        soup = bs(self.bytes_received)
         anchors = filter(lambda x: not x['href'].startswith('mailto:'), soup.find_all('a', href=True))
 
         for a in anchors:
@@ -66,15 +69,30 @@ class crawl:
 
                 if '#' not in url:
                     self.links.append((url, None))
-                    
-        return links
 
-    def compile_statuses(self, links):
+        print 'SCRAPE COMPLETE'
+
+    def cleanse_links(self):
+        """
+        Scan links list and remove all duplicates.
+        """
+        clean_links = []
+        unique = set()
+
+        for link in self.links:
+            if link not in unique:
+                clean_links.append(link)
+                unique.add(link)
+
+        self.links = clean_links
+        print 'CLEANSE COMPLETE'
+
+    def compile_statuses(self):
         """
         Compile status codes of links into the links list.
         """
         
-        for l in self.links:
+        for link in self.links:
             status = l[1]
             str_link = urlparse(l[0])
             conn = httplib.HTTPConnection(str_link.hostname)
@@ -86,9 +104,19 @@ class crawl:
                 l = list(l)
                 l[1] = status
                 l = tuple(l)
+
+        print 'COMPILE COMPLETE'
     
     def follow(self, link):
         """
-        Create new crawl object on the input link
+        Create new crawl object on the input link.
         """
-        pass
+        new_crawl = crawl()
+        new_crawl.link_in = link
+
+    def follow_all(self):
+        """
+        Create new crawl object for each link in links.
+        """
+        for link in self.links:
+            follow(l[0])
