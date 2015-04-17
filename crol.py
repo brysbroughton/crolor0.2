@@ -33,7 +33,6 @@ class generic_type(object):
         self.props = self.props or {'type' : 'generic'}
         if not self.props.has_key('type'):
             raise Exception('Generic subtype must have a type specified in properties')
-        self.set_prop('type', self.props['type'])
         for key, val in self.props.iteritems():
             self.set_prop(key, val)
         self.args = kwargs
