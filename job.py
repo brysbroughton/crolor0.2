@@ -1,6 +1,6 @@
-import crol
+from crol import *
 from otc_department_registry import registry_data as rd
-rg = crol.registry(rd)
+rg = registry(rd)
 
 class job:
 

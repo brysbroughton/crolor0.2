@@ -1,3 +1,6 @@
+from urlparse import urlparse
+import re
+
 
 class generic_type(object):
     """
@@ -171,3 +174,63 @@ class url_report(generic_type):
         
         super(url_report, self).__init__(**kwargs)
         
+
+        
+class node(generic_type):
+    """
+    Handles a url request information.
+    """
+    
+    def __init__(self, kwargs={}):
+        self.props = {
+            'type' : 'node',
+            'url' : None,
+            'urlparse' : None,
+            'links' : [],
+            'parent': None,
+            'children' : []
+        }
+        
+        super(node, self).__init__(**kwargs)
+        
+        if not self.url:
+            raise Exception("Node object must be created with a url")
+        
+        self.set_prop('url', self.normalize(self.get_prop('url')))#first step is to normalize all urls
+        self.set_prop('urlparse', urlparse(self.get_prop('url')))
+    
+    def normalize(self, link):
+        """
+        Take a string link similar to /admissions
+        Return a valid url like http://otc.edu/admissions
+        Use urlparse to get the pieces of the link.
+        If essential components (scheme, netloc) are missing, attempt to use those from parent node
+        """
+        new_parsed = urlparse(link)
+        #relative paths are tricky
+        new_path = new_parsed.path
+        new_link = []
+        
+        try:
+            if new_path.startswith('/'):
+                pass
+            else:#link with no leading slash should be sub-link of current directory
+                if self.urlparse:
+                    old_path_bits = re.split('/', self.urlparse.path)
+                    if '.' in old_path_bits[-1]:#url ends with a filename
+                        new_path_bits = old_path_bits[:-1] + [new_path]
+                        new_path = '/'.join(new_path_bits)
+                    else:
+                        new_path = (self.urlparse.path + '/' + new_parsed.path).replace('//','/')
+            new_link = [
+                (new_parsed.scheme or self.urlparse.scheme) + '://',
+                new_parsed.netloc or self.urlparse.netloc,
+                new_path,
+                #';'+new_parsed.params,
+                '?'+new_parsed.query,
+                #'#'+new_parsed.fragment
+            ]
+        except AttributeError as AEX:
+            raise Exception("Could not normalize url. Url is mal-formed, or a relative url without a parent node. ORIGINAL ERROR: "+AEX.message)
+        
+        return ''.join(new_link)
