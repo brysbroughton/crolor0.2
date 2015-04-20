@@ -187,6 +187,7 @@ class node(generic_type):
             'type' : 'node',
             'url' : None,
             'urlparse' : None,
+            'status' : None,
             'links' : [],
             'parent': None,
             'children' : []
@@ -239,20 +240,26 @@ class node(generic_type):
     
     def request(self):
         """
-        Request the url provided to the constructor
+        Request the url provided to the constructor.
+        Set node url status code.
+        Call scape() and set node links list.
         """
         urlparse = self.list_props['urlparse']
         conn = httplib.HTTPConnection(urlparse.netloc)
         conn.request('GET',urlparse.path)
-        data = conn.getresponse().read()
+        resp = conn.getresponse()
+        data = resp.read()
+        self.set_prop('status', resp.status)
         self.set_prop('links', self.scrape(data))
     
     def scrape(self, data):
         """
         Use beautiful soup to get all the links off of the page.
         Return scraped links in list form.
+        links = [anchors + images + scripts]
         """
         links = []
+        unique = set()
         soup = bs(data)
         anchors = filter(lambda x: not x['href'].startswith('mailto:'), soup.find_all('a', href=True))
         images = [img['src'] for img in soup.find_all('img', src=True)]
@@ -260,23 +267,30 @@ class node(generic_type):
         
         for a in anchors:
             href = re.search('href="(.+?)"', str(a))
-            if href:
+            if href and a not in unique:
                 url = normalize(href.group(1))
                 if '#' not in url:
                     links.append(url)
+                    unique.add(url)
+        
+        unique.clear()
         
         for i in images:
           src = re.search('src="(.+?)"', str(i))
-          if src:
+          if src and i not in unique:
                 url = normalize(src.group(1))
                 if '#' not in url:
                     links.append(url)
+                    unique.add(url)
+        
+        unique.clear()
         
         for s in scripts:
             src = re.search('src="(.+?)"', str(a))
-            if src:
+            if src and s not in unique:
                 url = normalize(src.group(1))
                 if '#' not in url:
                     links.append(url)
+                    unique.add(url)
         
         return links
