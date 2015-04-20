@@ -2,7 +2,7 @@ from urlparse import urlparse
 import re
 
 
-class generic_type(object):
+class GenericType(object):
     """
     General template for associating properties to actions.
     To be extended by other crol classes.
@@ -11,20 +11,20 @@ class generic_type(object):
     
     """
 
-    def set_prop(self, key, val):
+    def setprop(self, key, val):
         if self.props.has_key(key):
             self.props[key] = val
             setattr(self, key, val)
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
 
-    def get_prop(self, key):
+    def getprop(self, key):
         if self.props.has_key(key):
             return self.props[key]
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
             
-    def list_props(self):
+    def listprops(self):
         for key, val in self.props.iteritems():
             print "%s : %s" % (key, val)
             
@@ -37,20 +37,20 @@ class generic_type(object):
         if not self.props.has_key('type'):
             raise Exception('Generic subtype must have a type specified in properties')
         for key, val in self.props.iteritems():
-            self.set_prop(key, val)
+            self.setprop(key, val)
         self.args = kwargs
         self.__use_args__()
 
     def __use_args__(self):
         for key, val in self.args.iteritems():
             if self.props.has_key(key):
-                self.set_prop(key, val)
+                self.setprop(key, val)
             else:
                 raise Exception('%s object has no property: %s' % (self.props['type'], key))
 
 
 
-class registration(generic_type):
+class Registration(GenericType):
     """
     Object that associates a department to a website and actions.
 
@@ -68,14 +68,14 @@ class registration(generic_type):
             'actions' : []
         }
 
-        super(registration, self).__init__(**kwargs)
+        super(Registration, self).__init__(**kwargs)
 
         if self.props['department']:
-            setattr(self, 'department', department(self.props['department']))
+            setattr(self, 'department', Department(self.props['department']))
 
         
 
-class department(generic_type):
+class Department(GenericType):
     """
     Object handles information for an orgnaizational entity associated with a crawl
 
@@ -94,12 +94,12 @@ class department(generic_type):
             'email_group' : []
         }
 
-        super(department, self).__init__(**kwargs)
+        super(Department, self).__init__(**kwargs)
 
 
 
 
-class registry(generic_type):
+class Registry(GenericType):
     """
     Object handles the listing of sites to crawl and associates them to departments.
     """
@@ -110,14 +110,14 @@ class registry(generic_type):
             'registrations' : []
         }
 
-        super(registry, self).__init__(**kwargs)
+        super(Registry, self).__init__(**kwargs)
 
         if self.props['registrations']:
-            setattr(self, 'registrations', [registration(r) for r in self.props['registrations']])
+            setattr(self, 'registrations', [Registration(r) for r in self.props['registrations']])
             
             
             
-class crawl_report(generic_type):
+class CrawlReport(GenericType):
     """
     Object instatiated 1-1 with a crawl job.
     
@@ -131,17 +131,17 @@ class crawl_report(generic_type):
             'url_reports' : []#not sure if use
         }
     
-        super(crawl_report, self).__init__(**kwargs)
+        super(CrawlReport, self).__init__(**kwargs)
         
         if self.props['page_reports']:
-            setattr(self, 'page_reports', [page_report(r) for r in self.props['page_reports']])
+            setattr(self, 'page_reports', [PageReport(r) for r in self.props['page_reports']])
 
         if self.props['url_reports']:
-            setattr(self, 'url_reports', [url_report(r) for r in self.props['url_reports']])
+            setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
             
             
             
-class page_report(generic_type):
+class PageReport(GenericType):
     """
     Object for handling the reports of all links on its page
     """
@@ -154,13 +154,13 @@ class page_report(generic_type):
             'url_reports' : []
         }
         
-        super(page_report, self).__init__(**kwargs)
+        super(PageReport, self).__init__(**kwargs)
         
         if self.props['url_reports']:
-            setattr(self, 'url_reports', [url_report(r) for r in self.props['url_reports']])
+            setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
 
             
-class url_report(generic_type):
+class UrlReport(GenericType):
     """
     Object for handling url and the response received when it is requested.
     """
@@ -172,11 +172,11 @@ class url_report(generic_type):
             'linked_from' : None
         }
         
-        super(url_report, self).__init__(**kwargs)
+        super(UrlReport, self).__init__(**kwargs)
         
 
         
-class node(generic_type):
+class Node(GenericType):
     """
     Handles a url request information.
     """
@@ -193,13 +193,13 @@ class node(generic_type):
             'children' : []
         }
         
-        super(node, self).__init__(**kwargs)
+        super(Node, self).__init__(**kwargs)
         
         if not self.url:
             raise Exception("Node object must be created with a url")
         
-        self.set_prop('url', self.normalize(self.get_prop('url')))#first step is to normalize all urls
-        self.set_prop('urlparse', urlparse(self.get_prop('url')))
+        self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
+        self.setprop('urlparse', urlparse(self.getprop('url')))
     
     def normalize(self, link):
         """

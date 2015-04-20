@@ -3,7 +3,7 @@ from bs4 import BeautifulSoup as bs
 import httplib
 import re
 
-class crawl(object):
+class Crawl(object):
 
     link_in = None
     seed = None # replace by parsed link_in
@@ -20,7 +20,7 @@ class crawl(object):
 
 
 
-class node(object):
+class Node(object):
 
     link_in = None
     link_parsed = None
@@ -36,7 +36,7 @@ class node(object):
         if not parse_link_in.netloc:
             raise Exception("Can't follow link with invalid host %s" % link_in)
 
-    def normalize_link(self, link):
+    def normalize(self, link):
         """
         Take a string link similar to /admissions
         Return a valid url like http://otc.edu/admissions
@@ -60,7 +60,7 @@ class node(object):
         
         return ''.join(new_link)
     
-    def request_page(self):
+    def requestpage(self):
         """
         Request the url provided to the constructor
         """
@@ -74,7 +74,7 @@ class node(object):
         print response.status
         print response.reason
     
-    def scrape_links(self):
+    def scrapelinks(self):
         """
         Use beautiful soup to get all the links off of the page.
         Return as list
@@ -96,7 +96,7 @@ class node(object):
                     
         return self.links
 
-    def compile_statuses(self, links):
+    def compilestatuses(self, links):
         """
         Compile status codes of links into the links list.
         """

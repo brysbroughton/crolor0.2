@@ -1,8 +1,9 @@
 from crol import *
-from otc_department_registry import registry_data as rd
-rg = registry(rd)
+from otcregistry import registry_data as rd
 
-class job:
+rg = Registry(rd)
+
+class Job:
 
     visited_urls = set([])
     
