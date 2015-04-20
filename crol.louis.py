@@ -266,6 +266,10 @@ class node(generic_type):
         scripts = [script['src'] for script in soup.find_all('script', src=True)]
         
         for a in anchors:
+#            use this method for getting urls
+#            for href in re.findall('src=".*"', a):
+#                a = a.split('"')[1]
+            
             href = re.search('href="(.+?)"', str(a))
             if href and a not in unique:
                 url = normalize(href.group(1))
