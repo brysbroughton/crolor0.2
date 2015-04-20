@@ -247,54 +247,48 @@ class node(generic_type):
         urlparse = self.list_props['urlparse']
         conn = httplib.HTTPConnection(urlparse.netloc)
         conn.request('GET',urlparse.path)
-        resp = conn.getresponse()
-        data = resp.read()
-        self.set_prop('status', resp.status)
-        self.set_prop('links', self.scrape(data))
+        response = conn.getresponse()
+        bytes_received = response.read()
+        self.set_prop('status', response.status)
+        self.set_prop('links', self.scrape(bytes_received))
     
     def scrape(self, data):
         """
         Use beautiful soup to get all the links off of the page.
-        Return scraped links in list form.
-        links = [anchors + images + scripts]
+        Return scraped links in set form.
         """
-        links = []
-        unique = set()
+        links = set()
         soup = bs(data)
-        anchors = filter(lambda x: not x['href'].startswith('mailto:'), soup.find_all('a', href=True))
-        images = [img['src'] for img in soup.find_all('img', src=True)]
-        scripts = [script['src'] for script in soup.find_all('script', src=True)]
+        a_tags = filter(lambda x: not x['href'].startswith('mailto:'), soup.find_all('a', href=True))
+        link_tags = [link['href'] for link in soup.find_all('link', href=True)]
+        img_tags = [img['src'] for img in soup.find_all('img', src=True)]
+        script_tags = [script['src'] for script in soup.find_all('script', src=True)]
         
-        for a in anchors:
 #            use this method for getting urls
 #            for href in re.findall('src=".*"', a):
 #                a = a.split('"')[1]
-            
-            href = re.search('href="(.+?)"', str(a))
-            if href and a not in unique:
-                url = normalize(href.group(1))
-                if '#' not in url:
-                    links.append(url)
-                    unique.add(url)
+        # Extract and add a_tags href to links set
+        for a in a_tags:
+            for href in re.findall('href=".*"', a):
+              a = a.split('\"')[1]
+              links.add(a)
         
-        unique.clear()
+        # Extract and add link_tags href to links set
+        for l in link_tags:
+          for src in re.findall('href=".*"', l):
+              l = l.split('\"')[1]
+              links.add(l)
         
-        for i in images:
-          src = re.search('src="(.+?)"', str(i))
-          if src and i not in unique:
-                url = normalize(src.group(1))
-                if '#' not in url:
-                    links.append(url)
-                    unique.add(url)
+        # Extract and add img_tags src to links set
+        for i in img_tags:
+          for src in re.findall('src=".*"', i):
+              i = i.split('\"')[1]
+              links.add(i)
         
-        unique.clear()
-        
-        for s in scripts:
-            src = re.search('src="(.+?)"', str(a))
-            if src and s not in unique:
-                url = normalize(src.group(1))
-                if '#' not in url:
-                    links.append(url)
-                    unique.add(url)
+        # Extract and add script_tags src to links set
+        for s in script_tags:
+          for src in re.findall('src=".*"', s):
+              s = s.split('\"')[1]
+              links.add(s)
         
         return links
