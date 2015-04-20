@@ -1,3 +1,4 @@
+from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
 import re
 
@@ -186,6 +187,7 @@ class node(generic_type):
             'type' : 'node',
             'url' : None,
             'urlparse' : None,
+            'status' : None,
             'links' : [],
             'parent': None,
             'children' : []
@@ -198,6 +200,7 @@ class node(generic_type):
         
         self.set_prop('url', self.normalize(self.get_prop('url')))#first step is to normalize all urls
         self.set_prop('urlparse', urlparse(self.get_prop('url')))
+        self.request()
     
     def normalize(self, link):
         """
@@ -234,3 +237,61 @@ class node(generic_type):
             raise Exception("Could not normalize url. Url is mal-formed, or a relative url without a parent node. ORIGINAL ERROR: "+AEX.message)
         
         return ''.join(new_link)
+    
+    def request(self):
+        """
+        Request the url provided to the constructor.
+        Set node url status code.
+        Call scape() and set node links list.
+        """
+        urlparse = self.list_props['urlparse']
+        conn = httplib.HTTPConnection(urlparse.netloc)
+        conn.request('GET',urlparse.path)
+        response = conn.getresponse()
+        bytes_received = response.read()
+        self.set_prop('status', response.status)
+        self.set_prop('links', self.scrape(bytes_received))
+    
+    def scrape(self, data):
+        """
+        Use beautiful soup to get all the links off of the page.
+        Return scraped links in set form.
+        """
+        links = set()
+        soup = bs(data)
+        tags = []
+        tags.extend([tag['background'] for tag in soup.find_all(background=True)])
+        tags.extend([tag['cite'] for tag in soup.find_all(cite=True)])
+        tags.extend([tag['codebase'] for tag in soup.find_all(codebase=True)])
+        tags.extend(filter(lambda tag: not tag['href'].startswith('mailto:'), soup.find_all(href=True)))
+        tags.extend([tag['longdesc'] for tag in soup.find_all(longdesc=True)])
+        tags.extend([tag['src'] for tag in soup.find_all(src=True)])
+        
+        
+        # Extract urls from URI type attributes
+        for t in tags:
+            for background in re.findall('background=".*"', t):
+                t = normalize(t.split('\"')[1])
+                links.add(t)
+            
+            for cite in re.findall('cite=".*"', t):
+                t = normalize(t.split('\"')[1])
+                links.add(t)
+            
+            for codebase in re.findall('codebase=".*"', t):
+                t = normalize(t.split('\"')[1])
+                links.add(t)
+            
+            for href in re.findall('href=".*"', t):
+                t = normalize(t.split('\"')[1])
+                links.add(t)
+            
+            for longdesc in re.findall('longdesc=".*"', t):
+                t = normalize(t.split('\"')[1])
+                links.add(t)
+            
+            for src in re.findall('src=".*"', t):
+                t = normalize(t.split('\"')[1])
+                links.add(t)
+        
+        return links
