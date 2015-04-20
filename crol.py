@@ -260,38 +260,17 @@ class Node(GenericType):
         links = set()
         soup = bs(data)
         tags = []
-        tags.extend([tag['background'] for tag in soup.find_all(background=True)])
-        tags.extend([tag['cite'] for tag in soup.find_all(cite=True)])
-        tags.extend([tag['codebase'] for tag in soup.find_all(codebase=True)])
-        tags.extend(filter(lambda tag: not tag['href'].startswith('mailto:'), soup.find_all(href=True)))
-        tags.extend([tag['longdesc'] for tag in soup.find_all(longdesc=True)])
-        tags.extend([tag['src'] for tag in soup.find_all(src=True)])
+        attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
         
+        for a in attrs:
+            tags.extend([tag[a] for tag in soup.find_all({a:True})])
         
         # Extract urls from URI type attributes
         for t in tags:
-            for background in re.findall('background=".*"', t):
-                t = normalize(t.split('\"')[1])
-                links.add(t)
-            
-            for cite in re.findall('cite=".*"', t):
-                t = normalize(t.split('\"')[1])
-                links.add(t)
-            
-            for codebase in re.findall('codebase=".*"', t):
-                t = normalize(t.split('\"')[1])
-                links.add(t)
-            
-            for href in re.findall('href=".*"', t):
-                t = normalize(t.split('\"')[1])
-                links.add(t)
-            
-            for longdesc in re.findall('longdesc=".*"', t):
-                t = normalize(t.split('\"')[1])
-                links.add(t)
-            
-            for src in re.findall('src=".*"', t):
-                t = normalize(t.split('\"')[1])
-                links.add(t)
+            for a in attrs:
+                for url in re.findall(a+'=".*"', t):
+                    if not url.startswith('mailto:'):
+                        url = normalize(url.split('\"')[1])
+                        links.add(url)
         
         return links
