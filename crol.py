@@ -188,6 +188,7 @@ class Node(GenericType):
             'url' : None,
             'urlparse' : None,
             'status' : None,
+            'reason' : None,
             'links' : [],
             'parent': None,
             'children' : []
@@ -241,16 +242,17 @@ class Node(GenericType):
     def request(self):
         """
         Request the url provided to the constructor.
-        Set node url status code.
+        Set node url status code and reason.
         Call scape() and set node links list.
         """
         #urlparse = self.listprops['urlparse']
         conn = httplib.HTTPConnection(self.urlparse.netloc)
         conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
-        bytes_received = response.read()
+        html_response = response.read()
         self.setprop('status', response.status)
-        self.setprop('links', self.scrape(bytes_received))
+        self.setprop('reason', response.reason)
+        self.setprop('links', self.scrape(html_response))
     
     def scrape(self, html):
         """
