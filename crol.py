@@ -189,9 +189,9 @@ class Node(GenericType):
             'urlparse' : None,
             'status' : None,
             'reason' : None,
-            'links' : [],
-            'parent': None,
-            'children' : []
+            'links' : set([]),
+            'parent': None,#'HEAD'
+            'children' : set([])
         }
         
         super(Node, self).__init__(**kwargs)
@@ -270,3 +270,9 @@ class Node(GenericType):
             ))
         
         return links
+
+        
+class Crawl(GenericType):
+    """
+    Executes site crawl by creating and maintaining Node tree.
+    """
