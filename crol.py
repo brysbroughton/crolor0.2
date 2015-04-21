@@ -276,3 +276,43 @@ class Crawl(GenericType):
     """
     Executes site crawl by creating and maintaining Node tree.
     """
+
+    def __init__(self, kwargs={}):
+        self.props = {
+            'type' : 'crawler',
+            'seed' : None,
+            'node_tree': None,#'HEAD'
+            'visited_urls' : set([]),
+            'log' : None
+        }
+        
+        super(Crawl, self).__init__(**kwargs)
+        
+    def start(self):
+        """
+        Begin the crawl process from url seed
+        """
+        h = Node({'url':self.seed, 'parent':'HEAD'})
+        self.setprop('node_tree', h)
+        self.reccrawl(h)
+        
+    def reccrawl(self, node):
+        self.visited_urls.add(node.url)
+        for l in node.links:
+            nurl = node.normalize(l)
+            if self.shouldfollow(nurl):
+                new_node = Node({'url':nurl})
+                new_node.setprop('parent', node)
+                self.reccrawl(new_node)
+                
+    def shouldfollow(self, node):
+        """
+        Take node object, return boolean
+        """
+        #extend to evalute following
+        #don't crawl the same url 2x
+        #only crawl urls within a subsite of the input seed
+        return False
+    
+        
+        
