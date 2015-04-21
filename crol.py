@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
-import re
+import re, httplib
 
 
 class GenericType(object):
@@ -230,7 +230,7 @@ class Node(GenericType):
                 new_parsed.netloc or self.urlparse.netloc,
                 new_path,
                 #';'+new_parsed.params,
-                '?'+new_parsed.query,
+                '?'+new_parsed.query if new_parsed.query else '',
                 #'#'+new_parsed.fragment
             ]
         except AttributeError as AEX:
@@ -244,33 +244,27 @@ class Node(GenericType):
         Set node url status code.
         Call scape() and set node links list.
         """
-        urlparse = self.listprops['urlparse']
-        conn = httplib.HTTPConnection(urlparse.netloc)
-        conn.request('GET',urlparse.path)
+        #urlparse = self.listprops['urlparse']
+        conn = httplib.HTTPConnection(self.urlparse.netloc)
+        conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
         bytes_received = response.read()
         self.setprop('status', response.status)
         self.setprop('links', self.scrape(bytes_received))
     
-    def scrape(self, data):
+    def scrape(self, html):
         """
         Use beautiful soup to get all the links off of the page.
         Return scraped links in set form.
         """
+        
         links = set()
-        soup = bs(data)
-        tags = []
+        soup = bs(html)
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
-        
+            
         for a in attrs:
-            tags.extend([tag[a] for tag in soup.find_all({a:True})])
-        
-        # Extract urls from URI type attributes
-        for t in tags:
-            for a in attrs:
-                for url in re.findall(a+'=".*"', t):
-                    if not url.startswith('mailto:'):
-                        url = normalize(url.split('\"')[1])
-                        links.add(url)
+            links.update(set(
+                map(lambda x: x[a], soup.findAll(**{a:True}))# **{} unzips dictionary to a=True
+            ))
         
         return links
