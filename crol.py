@@ -281,9 +281,9 @@ class Crawl(GenericType):
         self.props = {
             'type' : 'crawler',
             'seed' : None,
-            'node_tree': None,#'HEAD'
+            'node_tree' : set([]),#'HEAD'
             'visited_urls' : set([]),
-            'log' : None
+            'log' : None,
         }
         
         super(Crawl, self).__init__(**kwargs)
@@ -293,7 +293,8 @@ class Crawl(GenericType):
         Begin the crawl process from url seed
         """
         h = Node({'url':self.seed, 'parent':'HEAD'})
-        self.setprop('node_tree', h)
+        tree = self.getprop('node_tree')
+        self.setprop('node_tree', tree.update(h))
         self.reccrawl(h)
         
     def reccrawl(self, node):
@@ -305,14 +306,21 @@ class Crawl(GenericType):
                 new_node.setprop('parent', node)
                 self.reccrawl(new_node)
                 
-    def shouldfollow(self, node):
+    def shouldfollow(self, url):
         """
         Take node object, return boolean
         """
         #extend to evalute following
         #don't crawl the same url 2x
         #only crawl urls within a subsite of the input seed
-        return False
-    
+        if url not in self.getprop('visitied_urls'):
+            url_path = urlparse(url).path
+            seed_path = urlparse(seed).path
+            if url_path[:len(seed_path)] == seed_path:
+                return true
+            else:
+              return false
+        else:
+            return false    
         
         
