@@ -210,6 +210,13 @@ class Node(GenericType):
         Use urlparse to get the pieces of the link.
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
+        #check and throw exception for mailto
+        try:
+            if urlparse(link).scheme == 'mailto':
+                x = 1/0
+        except:
+            raise Exception('Could not normalize mailto.')
+        
         new_parsed = urlparse(link)
         #relative paths are tricky
         new_path = new_parsed.path
@@ -281,7 +288,7 @@ class Crawl(GenericType):
         self.props = {
             'type' : 'crawler',
             'seed' : None,
-            'node_tree' : set([]),#'HEAD'
+            'node_tree' : None,#'HEAD'
             'visited_urls' : set([]),
             'log' : None,
         }
@@ -292,18 +299,22 @@ class Crawl(GenericType):
         """
         Begin the crawl process from url seed
         """
-        h = Node({'url':self.seed, 'parent':'HEAD'})
-        tree = self.getprop('node_tree')
-        self.setprop('node_tree', tree.update(h))
-        self.reccrawl(h)
+        head = Node({'url':self.seed, 'parent':'HEAD'})
+        self.setprop('node_tree', head)
+        self.getprop('visited_urls').add(self.seed)
+        self.reccrawl(head)
         
     def reccrawl(self, node):
         self.visited_urls.add(node.url)
         for l in node.links:
+            print 'URL: ' + l
             nurl = node.normalize(l)
+            print 'NORMAL URL: ' + nurl
             if self.shouldfollow(nurl):
                 new_node = Node({'url':nurl})
                 new_node.setprop('parent', node)
+                self.getprop('visited_urls').add(nurl)
+                self.getprop('node_tree').children.add(new_node)
                 self.reccrawl(new_node)
                 
     def shouldfollow(self, url):
@@ -313,14 +324,12 @@ class Crawl(GenericType):
         #extend to evalute following
         #don't crawl the same url 2x
         #only crawl urls within a subsite of the input seed
-        if url not in self.getprop('visitied_urls'):
+        if url not in self.getprop('visited_urls'):
             url_path = urlparse(url).path
-            seed_path = urlparse(seed).path
+            seed_path = urlparse(self.getprop('seed')).path
             if url_path[:len(seed_path)] == seed_path:
-                return true
+                return True
             else:
-              return false
+                return False
         else:
-            return false    
-        
-        
+            return False
