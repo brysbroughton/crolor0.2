@@ -303,7 +303,7 @@ class Log(GenericType):
         date = date.strftime('%m%d%y%I%M%S')
         self.setprop('filePointer', open(self.path+self.filename+date+self.endfilename, 'a'))
         self.writefile(self.head_text)
-        #self.headingrow(self.heading_row)
+        self.headingrow(self.heading_row)
         
     def writefile(self, new_val):
         self.filePointer.write(new_val)
@@ -336,33 +336,37 @@ class WebLog(Log):
         self.props = {
                 'type' : 'weblog',
                 'path' : './',
-                'filename' : 'croler',
+                'filename' : 'webLog',
                 'endfilename' : '.log.html',
-                'head_text' : 'header\n',
-                'foot_text' : 'footer',
+                'head_text' : '<html><head></head><body><table>',
+                'foot_text' : '</table></body></html>',
                 'filePointer' : None,
-                "row_before" : '',
-                "row_after" : '',
-                "col_before" : '',
-                "col_after" : '',
-                "heading_row" : []
+                "row_before" : '<tr>',
+                "row_after" : '</tr>',
+                "col_before" : '<td>',
+                "col_after" : '</td>',
+                "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
             }
-        super(WebLog, self).__init__(**kwargs)
+        #super(WebLog, self).__init__(**kwargs)
+        super(WebLog, self).__init__(self.props)
 
 
 
+def webTest():
+    rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
+    w=WebLog()
+    #w=WebLog({'heading_row':['ONE', 'TWO','THREE','FOUR'],'endfilename':'.log.html','filename':'htmlLog','head_text':'<html><head></head><body><table>', 'foot_text':'</table></body></html>','row_before':'<tr>','row_after':'</tr>','col_before':'<td>','col_after':'</td>'})
+    w.listprops()
+    w.openfile()
+    for row in rows:
+        w.writerow(row)
+    w.closefile()
 def test():
-    l=Log({'endfilename':'.log.html','filename':'htmlLog','head_text':'<html><head></head><body><table>', 'foot_text':'</table></body></html>','row_before':'<tr>','row_after':'</tr>','col_before':'<td>','col_after':'</td>'})
-    l2=Log({'filename':'textformat','endfilename':'.log.txt','row_before':'','row_after':'\n','col_before':'','col_after':','})
+    l=Log({'heading_row':['Column 1', 'Column 2','Column 3','Column 4'],'filename':'textformat','endfilename':'.log.txt','row_before':'','row_after':'\n','col_before':'','col_after':','})
     l.openfile()
     l.writerow(["Much Longer item than the rest of these items", "another", "still more", "last one"])
     l.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
     l.writerow(["Line3", "Third Row ", "Row 3", "longest one in the third row"])
     l.closefile()
-    l2.openfile()
-    l2.writerow(["Much Longer item than the rest of these items", "another", "still more", "last one"])
-    l2.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
-    l2.writerow(["Line3", "Third Row ", "Row 3", "longest one in the third row"])
-    l2.closefile()
 
 
