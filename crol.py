@@ -267,6 +267,7 @@ class Node(GenericType):
         soup = bs(data)
         tags = []
 
+
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
         
         for a in attrs:
