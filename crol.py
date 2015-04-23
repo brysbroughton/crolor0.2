@@ -211,11 +211,8 @@ class Node(GenericType):
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
         #check and throw exception for mailto
-        try:
-            if urlparse(link).scheme == 'mailto':
-                x = 1/0
-        except:
-            raise Exception('Could not normalize mailto.')
+        if urlparse(link).scheme == 'mailto':
+            raise IOError('Could not normalize mailto.')
         
         new_parsed = urlparse(link)
         #relative paths are tricky
@@ -294,29 +291,31 @@ class Crawl(GenericType):
         }
         
         super(Crawl, self).__init__(**kwargs)
-        
+    
     def start(self):
         """
         Begin the crawl process from url seed
         """
         head = Node({'url':self.seed, 'parent':'HEAD'})
         self.setprop('node_tree', head)
-        self.getprop('visited_urls').add(self.seed)
         self.reccrawl(head)
-        
+    
     def reccrawl(self, node):
-        self.visited_urls.add(node.url)
+        self.getprop('visited_urls').add(node.url)
+        print 'ADD: ' + node.url + ' -------------------------------'
         for l in node.links:
             print 'URL: ' + l
-            nurl = node.normalize(l)
-            print 'NORMAL URL: ' + nurl
-            if self.shouldfollow(nurl):
+            nurl = ''
+            try:
+                nurl = node.normalize(l)
+            except IOError as error:
+                print error
+            if nurl and self.shouldfollow(nurl):
                 new_node = Node({'url':nurl})
                 new_node.setprop('parent', node)
-                self.getprop('visited_urls').add(nurl)
                 self.getprop('node_tree').children.add(new_node)
                 self.reccrawl(new_node)
-                
+    
     def shouldfollow(self, url):
         """
         Take node object, return boolean
