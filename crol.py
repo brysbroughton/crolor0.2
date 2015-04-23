@@ -4,6 +4,9 @@ import re
 import os
 import sys
 from datetime import datetime
+import smtplib
+from email.mime.text import MIMEText
+
 
 class GenericType(object):
     """
@@ -262,6 +265,7 @@ class Node(GenericType):
         links = set()
         soup = bs(data)
         tags = []
+
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
         
         for a in attrs:
@@ -375,6 +379,75 @@ class CsvLog(Log):
 
         GenericType.__init__(self, **kwargs)
 
+class Email(GenericType):
+    def __init__(self, kwargs={}):
+        self.props = {
+                    'type' : 'email',
+                    'msg_body' : '',
+                    'subject' : '',
+                    'from_address' : "",
+                    'to_address' : "",
+                    'smtp_server' : 'smtp.otc.edu',
+                    'mime_type' : "html"
+                }
+
+        super(Email, self).__init__(**kwargs)
+    def printMe(self):
+        print self
+
+    def send(self):
+        if self.props['to_address'] == "":
+            raise Exception('to_address must be set in class: Email')
+        elif self.props['from_address'] == "":
+            raise Exception('from_address must be set in class: Email')
+        else:
+            #composing message using MIMEText
+            if self.props['mime_type'] == "plain":
+                msg = MIMEText(self.msg_body, 'plain')
+            else:
+                msg = MIMEText(self.msg_body, 'html')
+            msg['Subject'] = self.subject
+            msg['From'] = self.from_address
+            msg['to'] = self.to_address
+            #Email transmission with smtplib and OTC servers
+            s = smtplib.SMTP(self.smtp_server)
+            s.sendmail(self.from_address, self.to_address, msg.as_string())
+            s.quit()
+    
+def emailTest():
+    message = "This is a message\nThis is another line in the message"
+    html_message = "<h1>Heading1</h1><h2>Heading2</h2><h3>Heading3</h3><h4>Heading4</h4><h5>Heading5</h5><h6>Heading6</h6>"
+    html_message += "<p>Paragraph</p><p>Another Paragraph</p>"
+    html_message += "<table>"
+    html_message += "<tr><td>1</td><td>2</td><td>3</td><td>4</td><td>5</td></tr>"
+    html_message += "<tr><td>One</td><td>Two</td><td>Three</td><td>Four</td><td>Five</td></tr>"
+    html_message += "<tr><td>I</td><td>II</td><td>III</td><td>IV</td><td>V</td></tr>"
+    html_message += "<tr><td>Uno</td><td>Dos</td><td>Tres</td><td>Cuatro</td><td>Cinco</td></tr>"
+    html_message += "</table>"
+    
+    e=Email({"mime_type":"plain","type":"email", "msg_body":message, "subject":"Testing Email Class", "from_address":"web@otc.edu","to_address":"wrighta@otc.edu","smtp_server":"smtp.otc.edu"})
+    e.send()
+
+    e2=Email()
+    e2.setprop("mime_type","plain")
+    e2.setprop("type","email")
+    e2.setprop("msg_body", message + "\nSent using the setprop method to set properties")
+    e2.setprop("subject","Set Prop Method")
+    e2.setprop("from_address","web@otc.edu")
+    e2.setprop("to_address","wrighta@otc.edu")
+    e2.setprop("smtp_server","smtp.otc.edu")
+    e2.send()
+    
+    e3=Email()
+    e3.setprop("mime_type","html")
+    e3.setprop("type","email")
+    e3.setprop("msg_body", html_message + "\nSent using html tags to check display")
+    e3.setprop("subject","HTML Email")
+    e3.setprop("from_address","web@otc.edu")
+    e3.setprop("to_address","wrighta@otc.edu")
+    e3.setprop("smtp_server","smtp.otc.edu")
+    e3.send()
+    
 def csvTest():
     rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
     c=CsvLog()
@@ -382,6 +455,7 @@ def csvTest():
     for row in rows:
         c.writerow(row)
     c.closefile()
+    
 def webTest():
     rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
     #w=WebLog()
@@ -391,6 +465,7 @@ def webTest():
     for row in rows:
         w.writerow(row)
     w.closefile()
+    
 def test():
     l=Log({'heading_row':['Column 1', 'Column 2','Column 3','Column 4'],'filename':'crol','endfilename':'.log.txt','row_before':'','row_after':'\n','col_before':'','col_after':','})
     l.openfile()
