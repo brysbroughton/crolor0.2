@@ -7,32 +7,31 @@ class GenericType(object):
     """
     General template for associating properties to actions.
     To be extended by other crol classes.
-
-    type: generic
     
+    type: generic
     """
-
+    
     def setprop(self, key, val):
         if self.props.has_key(key):
             self.props[key] = val
             setattr(self, key, val)
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
-
+    
     def getprop(self, key):
         if self.props.has_key(key):
             return self.props[key]
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
-            
+    
     def listprops(self):
         for key, val in self.props.iteritems():
             print "%s : %s" % (key, val)
-            
+    
     def __extend_props__(self, key, val=None):
         self.props[key] = val
         setattr(self, key, val)
-
+    
     def __init__(self, **kwargs):
         self.props = self.props or {'type' : 'generic'}
         if not self.props.has_key('type'):
@@ -41,7 +40,7 @@ class GenericType(object):
             self.setprop(key, val)
         self.args = kwargs
         self.__use_args__()
-
+    
     def __use_args__(self):
         for key, val in self.args.iteritems():
             if self.props.has_key(key):
@@ -50,17 +49,15 @@ class GenericType(object):
                 raise Exception('%s object has no property: %s' % (self.props['type'], key))
 
 
-
 class Registration(GenericType):
     """
     Object that associates a department to a website and actions.
-
+    
     department: department object
     site: dep.otc.edu/artment
     actions: list of action objects
-    
     """
-
+    
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'registration',
@@ -68,25 +65,23 @@ class Registration(GenericType):
             'site' : None,
             'actions' : []
         }
-
+        
         super(Registration, self).__init__(**kwargs)
-
+        
         if self.props['department']:
             setattr(self, 'department', Department(self.props['department']))
 
-        
 
 class Department(GenericType):
     """
     Object handles information for an orgnaizational entity associated with a crawl
-
+    
     type : department
     name : department_name
     main_email : department@otc.edu
     email_group : [an@email.com, another@email.edu]
-    
     """
-
+    
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'department',
@@ -94,34 +89,30 @@ class Department(GenericType):
             'main_email' : None,
             'email_group' : []
         }
-
+        
         super(Department, self).__init__(**kwargs)
-
-
 
 
 class Registry(GenericType):
     """
     Object handles the listing of sites to crawl and associates them to departments.
     """
-
+    
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'registry',
             'registrations' : []
         }
-
+        
         super(Registry, self).__init__(**kwargs)
-
+        
         if self.props['registrations']:
             setattr(self, 'registrations', [Registration(r) for r in self.props['registrations']])
-            
-            
-            
+
+
 class CrawlReport(GenericType):
     """
     Object instatiated 1-1 with a crawl job.
-    
     """
     
     def __init__(self, kwargs={}):
@@ -131,22 +122,21 @@ class CrawlReport(GenericType):
             'page_reports' : [],
             'url_reports' : []#not sure if use
         }
-    
+        
         super(CrawlReport, self).__init__(**kwargs)
         
         if self.props['page_reports']:
             setattr(self, 'page_reports', [PageReport(r) for r in self.props['page_reports']])
-
+        
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
-            
-            
-            
+
+
 class PageReport(GenericType):
     """
     Object for handling the reports of all links on its page
     """
-
+    
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'page_report',
@@ -160,7 +150,7 @@ class PageReport(GenericType):
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
 
-            
+
 class UrlReport(GenericType):
     """
     Object for handling url and the response received when it is requested.
@@ -176,7 +166,7 @@ class UrlReport(GenericType):
         super(UrlReport, self).__init__(**kwargs)
         
 
-        
+
 class Node(GenericType):
     """
     Handles a url request information.
@@ -210,11 +200,10 @@ class Node(GenericType):
         Use urlparse to get the pieces of the link.
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
+        new_parsed = urlparse(link.replace('\n', ''))
         #check and throw exception for mailto
-        if urlparse(link).scheme == 'mailto':
+        if new_parsed.scheme == 'mailto':
             raise IOError('Could not normalize mailto.')
-        
-        new_parsed = urlparse(link)
         #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
@@ -275,12 +264,12 @@ class Node(GenericType):
         
         return links
 
-        
+
 class Crawl(GenericType):
     """
     Executes site crawl by creating and maintaining Node tree.
     """
-
+    
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'crawler',
@@ -302,14 +291,12 @@ class Crawl(GenericType):
     
     def reccrawl(self, node):
         self.getprop('visited_urls').add(node.url)
-        print 'ADD: ' + node.url + ' -------------------------------'
         for l in node.links:
-            print 'URL: ' + l
             nurl = ''
             try:
                 nurl = node.normalize(l)
             except IOError as error:
-                print error
+                print #error
             if nurl and self.shouldfollow(nurl):
                 new_node = Node({'url':nurl})
                 new_node.setprop('parent', node)
@@ -324,9 +311,9 @@ class Crawl(GenericType):
         #don't crawl the same url 2x
         #only crawl urls within a subsite of the input seed
         if url not in self.getprop('visited_urls'):
-            url_path = urlparse(url).path
-            seed_path = urlparse(self.getprop('seed')).path
-            if url_path[:len(seed_path)] == seed_path:
+            url = urlparse(url)
+            seed = urlparse(self.getprop('seed'))
+            if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
                 return True
             else:
                 return False
