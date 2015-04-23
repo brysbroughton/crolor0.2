@@ -315,9 +315,14 @@ class Log(GenericType):
         self.filePointer.close
 
     def writerow(self, cols):
+        tempstring = ""
         self.writefile(self.row_before)
         for item in cols:
-            self.writefile(self.col_before + item + self.col_after)
+            tempstring += self.col_before + item + self.col_after
+        #checking for a comma at the end of the line and removing it if it exists
+        if tempstring[len(tempstring)-1] == ",":
+            tempstring = tempstring[0:len(tempstring)-1]
+        self.writefile(tempstring)
         self.writefile(self.row_after)
     
     def headingrow(self, headings=None):
@@ -331,6 +336,7 @@ class Log(GenericType):
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
 
+        
 class WebLog(Log):
     def __init__(self, kwargs={}):
         self.props = {
@@ -338,7 +344,7 @@ class WebLog(Log):
                 'path' : './',
                 'filename' : 'webLog',
                 'endfilename' : '.log.html',
-                'head_text' : '<html><head></head><body><table>',
+                'head_text' : '<!DOCTYPE html><html><head></head><body><table>',
                 'foot_text' : '</table></body></html>',
                 'filePointer' : None,
                 "row_before" : '<tr>',
@@ -347,22 +353,46 @@ class WebLog(Log):
                 "col_after" : '</td>',
                 "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
             }
-        #super(WebLog, self).__init__(**kwargs)
-        super(WebLog, self).__init__(self.props)
 
+        GenericType.__init__(self, **kwargs)
+        
+class CsvLog(Log):
+    def __init__(self, kwargs={}):
+        self.props = {
+                'type' : 'log',
+                'path' : './',
+                'filename' : 'csvLog',
+                'endfilename' : '.log.csv',
+                'head_text' : 'header\n',
+                'foot_text' : 'footer',
+                'filePointer' : None,
+                "row_before" : '',
+                "row_after" : '\n',
+                "col_before" : '',
+                "col_after" : ',',
+                "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
+            }
 
+        GenericType.__init__(self, **kwargs)
 
+def csvTest():
+    rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
+    c=CsvLog()
+    c.openfile()
+    for row in rows:
+        c.writerow(row)
+    c.closefile()
 def webTest():
     rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
-    w=WebLog()
-    #w=WebLog({'heading_row':['ONE', 'TWO','THREE','FOUR'],'endfilename':'.log.html','filename':'htmlLog','head_text':'<html><head></head><body><table>', 'foot_text':'</table></body></html>','row_before':'<tr>','row_after':'</tr>','col_before':'<td>','col_after':'</td>'})
+    #w=WebLog()
+    w=WebLog({'heading_row':['ONE', 'TWO','THREE','FOUR'],'endfilename':'.log.html','filename':'htmlLog','head_text':'<html><head></head><body><table>', 'foot_text':'</table></body></html>','row_before':'<tr>','row_after':'</tr>','col_before':'<td>','col_after':'</td>'})
     w.listprops()
     w.openfile()
     for row in rows:
         w.writerow(row)
     w.closefile()
 def test():
-    l=Log({'heading_row':['Column 1', 'Column 2','Column 3','Column 4'],'filename':'textformat','endfilename':'.log.txt','row_before':'','row_after':'\n','col_before':'','col_after':','})
+    l=Log({'heading_row':['Column 1', 'Column 2','Column 3','Column 4'],'filename':'crol','endfilename':'.log.txt','row_before':'','row_after':'\n','col_before':'','col_after':','})
     l.openfile()
     l.writerow(["Much Longer item than the rest of these items", "another", "still more", "last one"])
     l.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
