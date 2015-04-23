@@ -8,6 +8,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 
+
 class GenericType(object):
     """
     General template for associating properties to actions.
@@ -473,5 +474,6 @@ def test():
     l.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
     l.writerow(["Line3", "Third Row ", "Row 3", "longest one in the third row"])
     l.closefile()
+
 
 
