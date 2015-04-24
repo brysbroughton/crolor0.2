@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
-import re, httplib
+import re, httplib, urllib, mimetypes
 
 
 class GenericType(object):
@@ -242,10 +242,12 @@ class Node(GenericType):
         conn = httplib.HTTPConnection(self.urlparse.netloc)
         conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
-        html_response = response.read()
         self.setprop('status', response.status)
         self.setprop('reason', response.reason)
-        self.setprop('links', self.scrape(html_response))
+        print 'MIMETYPE: ' + str(mimetypes.guess_type(self.urlparse.path))
+        if str(mimetypes.guess_type(self.urlparse.path)) == 'text/html':
+            html_response = response.read()
+            self.setprop('links', self.scrape(html_response))
     
     def scrape(self, html):
         """
@@ -298,6 +300,7 @@ class Crawl(GenericType):
             except IOError as error:
                 print #error
             if new_url:
+                print 'NEW URL: ' + new_url
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
                 self.getprop('node_tree').children.add(new_node)
