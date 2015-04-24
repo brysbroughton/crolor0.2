@@ -177,6 +177,7 @@ class Node(GenericType):
             'type' : 'node',
             'url' : None,
             'urlparse' : None,
+            'mimetype' : None,
             'status' : None,
             'reason' : None,
             'links' : set([]),
@@ -246,8 +247,8 @@ class Node(GenericType):
         self.setprop('reason', response.reason)
         #check for text/html mime type to scrape html
         url_info = urllib.urlopen(self.url).info()
-        mime_type = url_info.type
-        if mime_type == 'text/html':
+        self.setprop('mimetype', url_info.type)
+        if self.getprop('mimetype') == 'text/html':
             html_response = response.read()
             self.setprop('links', self.scrape(html_response))
     
