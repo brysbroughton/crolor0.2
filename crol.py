@@ -292,16 +292,17 @@ class Crawl(GenericType):
     def reccrawl(self, node):
         self.getprop('visited_urls').add(node.url)
         for l in node.links:
-            nurl = ''
+            new_url = None
             try:
-                nurl = node.normalize(l)
+                new_url = node.normalize(l)
             except IOError as error:
                 print #error
-            if nurl and self.shouldfollow(nurl):
-                new_node = Node({'url':nurl})
+            if new_url:
+                new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
                 self.getprop('node_tree').children.add(new_node)
-                self.reccrawl(new_node)
+                if self.shouldfollow(new_url):
+                    self.reccrawl(new_node)
     
     def shouldfollow(self, url):
         """
