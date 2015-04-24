@@ -305,7 +305,7 @@ class Crawl(GenericType):
             if new_url and new_url not in self.getprop('visited_urls'):
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
-                self.getprop('node_tree').children.add(new_node)
+                node.children.add(new_node)
                 if self.shouldfollow(new_url):
                     self.reccrawl(new_node)
                 else:
