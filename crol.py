@@ -1,6 +1,6 @@
 from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
-import re, httplib, urllib, mimetypes
+import re, httplib, urllib
 
 
 class GenericType(object):
@@ -238,14 +238,16 @@ class Node(GenericType):
         Set node url status code and reason.
         Call scape() and set node links list.
         """
-        #urlparse = self.listprops['urlparse']
+        #connect and collect node.url info
         conn = httplib.HTTPConnection(self.urlparse.netloc)
         conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
         self.setprop('status', response.status)
         self.setprop('reason', response.reason)
-        print 'MIMETYPE: ' + str(mimetypes.guess_type(self.urlparse.path))
-        if str(mimetypes.guess_type(self.urlparse.path)) == 'text/html':
+        #check for text/html mime type to scrape html
+        url_info = urllib.urlopen(self.url).info()
+        mime_type = url_info.type
+        if mime_type == 'text/html':
             html_response = response.read()
             self.setprop('links', self.scrape(html_response))
     
@@ -300,7 +302,6 @@ class Crawl(GenericType):
             except IOError as error:
                 print #error
             if new_url:
-                print 'NEW URL: ' + new_url
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
                 self.getprop('node_tree').children.add(new_node)
