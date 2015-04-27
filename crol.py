@@ -295,12 +295,11 @@ class Crawl(GenericType):
         """
         head = Node({'url':self.seed_url, 'parent':'HEAD'})
         self.setprop('node_tree', head)
+        if funcin: funcin(head)
         self.reccrawl(head, funcin)
     
     def reccrawl(self, node, funcin=None):
         self.getprop('visited_urls').add(node.url)
-        
-        if funcin: funcin(node)
         
         for l in node.links:
             new_url = None
@@ -312,6 +311,7 @@ class Crawl(GenericType):
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
                 node.children.add(new_node)
+                if funcin: funcin(new_node)
                 if self.shouldfollow(new_url):
                     self.reccrawl(new_node, funcin)
                 else:
