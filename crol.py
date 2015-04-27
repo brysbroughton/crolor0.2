@@ -1,6 +1,7 @@
 from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
-import re, httplib, urllib
+from datetime import datetime
+import re, os, sys, httplib, urllib
 
 
 class GenericType(object):
@@ -327,3 +328,124 @@ class Crawl(GenericType):
                 return False
         else:
             return False
+
+class Log(GenericType):
+    
+
+    def __init__(self, kwargs={}):
+        self.props = {
+                'type' : 'log',
+                'path' : './',
+                'filename' : 'croler',
+                'endfilename' : '.log.txt',
+                'head_text' : 'header\n',
+                'foot_text' : 'footer',
+                'filePointer' : None,
+                "row_before" : '',
+                "row_after" : '',
+                "col_before" : '',
+                "col_after" : '',
+                "heading_row" : []
+            }
+        super(Log, self).__init__(**kwargs)
+        
+    def openfile(self):
+        date = datetime.now()
+        date = date.strftime('%m%d%y%I%M%S')
+        self.setprop('filePointer', open(self.path+self.filename+date+self.endfilename, 'a'))
+        self.writefile(self.head_text)
+        self.headingrow(self.heading_row)
+        
+    def writefile(self, new_val):
+        self.filePointer.write(new_val)
+        self.filePointer.flush()
+        os.fsync(self.filePointer)
+
+    def closefile(self):
+        self.writefile(self.foot_text)
+        self.filePointer.close
+
+    def writerow(self, cols):
+        tempstring = ""
+        self.writefile(self.row_before)
+        for item in cols:
+            tempstring += self.col_before + item + self.col_after
+        #checking for a comma at the end of the line and removing it if it exists
+        if tempstring[len(tempstring)-1] == ",":
+            tempstring = tempstring[0:len(tempstring)-1]
+        self.writefile(tempstring)
+        self.writefile(self.row_after)
+    
+    def headingrow(self, headings=None):
+        if headings:
+            self.writefile(self.row_before)
+            for header in  headings:
+                self.writefile(self.col_before)
+                self.writefile(header)
+                self.writefile(self.col_after)
+        else:
+            self.writefile(self.heading_row)
+        self.writefile(self.row_after)
+
+        
+class WebLog(Log):
+    def __init__(self, kwargs={}):
+        self.props = {
+                'type' : 'weblog',
+                'path' : './',
+                'filename' : 'webLog',
+                'endfilename' : '.log.html',
+                'head_text' : '<!DOCTYPE html><html><head></head><body><table>',
+                'foot_text' : '</table></body></html>',
+                'filePointer' : None,
+                "row_before" : '<tr>',
+                "row_after" : '</tr>',
+                "col_before" : '<td>',
+                "col_after" : '</td>',
+                "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
+            }
+
+        GenericType.__init__(self, **kwargs)
+        
+class CsvLog(Log):
+    def __init__(self, kwargs={}):
+        self.props = {
+                'type' : 'log',
+                'path' : './',
+                'filename' : 'csvLog',
+                'endfilename' : '.log.csv',
+                'head_text' : 'header\n',
+                'foot_text' : 'footer',
+                'filePointer' : None,
+                "row_before" : '',
+                "row_after" : '\n',
+                "col_before" : '',
+                "col_after" : ',',
+                "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
+            }
+
+        GenericType.__init__(self, **kwargs)
+
+def csvTest():
+    rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
+    c=CsvLog()
+    c.openfile()
+    for row in rows:
+        c.writerow(row)
+    c.closefile()
+def webTest():
+    rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
+    #w=WebLog()
+    w=WebLog({'heading_row':['ONE', 'TWO','THREE','FOUR'],'endfilename':'.log.html','filename':'htmlLog','head_text':'<html><head></head><body><table>', 'foot_text':'</table></body></html>','row_before':'<tr>','row_after':'</tr>','col_before':'<td>','col_after':'</td>'})
+    w.listprops()
+    w.openfile()
+    for row in rows:
+        w.writerow(row)
+    w.closefile()
+def test():
+    l=Log({'heading_row':['Column 1', 'Column 2','Column 3','Column 4'],'filename':'crol','endfilename':'.log.txt','row_before':'','row_after':'\n','col_before':'','col_after':','})
+    l.openfile()
+    l.writerow(["Much Longer item than the rest of these items", "another", "still more", "last one"])
+    l.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
+    l.writerow(["Line3", "Third Row ", "Row 3", "longest one in the third row"])
+    l.closefile()
