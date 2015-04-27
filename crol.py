@@ -427,7 +427,7 @@ def emailTest():
     html_message += "<tr><td>Uno</td><td>Dos</td><td>Tres</td><td>Cuatro</td><td>Cinco</td></tr>"
     html_message += "</table>"
     
-    e=Email({"mime_type":"plain","type":"email", "msg_body":message, "subject":"Testing Email Class", "from_address":"web@otc.edu","to_address":"wrighta@otc.edu","smtp_server":"smtp.otc.edu"})
+    e=Email({"mime_type":"plain","type":"email", "msg_body":message, "subject":"Testing Email Class", "from_address":"web@otc.edu","to_address":"freemanl@otc.edu","smtp_server":"smtp.otc.edu"})
     e.send()
 
     e2=Email()
@@ -436,7 +436,7 @@ def emailTest():
     e2.setprop("msg_body", message + "\nSent using the setprop method to set properties")
     e2.setprop("subject","Set Prop Method")
     e2.setprop("from_address","web@otc.edu")
-    e2.setprop("to_address","wrighta@otc.edu")
+    e2.setprop("to_address","freemanl@otc.edu")
     e2.setprop("smtp_server","smtp.otc.edu")
     e2.send()
     
@@ -444,11 +444,21 @@ def emailTest():
     e3.setprop("mime_type","html")
     e3.setprop("type","email")
     e3.setprop("msg_body", html_message + "\nSent using html tags to check display")
-    e3.setprop("subject","HTML Email")
+    e3.setprop("subject","This Works")
     e3.setprop("from_address","web@otc.edu")
-    e3.setprop("to_address","wrighta@otc.edu")
+    e3.setprop("to_address","freemanl@otc.edu")
     e3.setprop("smtp_server","smtp.otc.edu")
     e3.send()
+    
+    e4=Email()
+    e4.setprop("mime_type","html")
+    e4.setprop("type","email")
+    e4.setprop("msg_body", html_message + "\nSent using html tags to check display")
+    e4.setprop("subject","HTML Email Test")
+    e4.setprop("from_address","web@otc.edu")
+    e4.setprop("to_address","freemanl@otc.edu")
+    e4.setprop("smtp_server","smtp.otc.edu")
+    e4.send()
     
 def csvTest():
     rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
