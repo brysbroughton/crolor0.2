@@ -44,3 +44,8 @@ class CrawlJob(crol.GenericType):
         self.log.writerow([node.status, node.reason, node.mimetype, node.url])
 
 
+##this is how the CrawlJob is used
+cj = CrawlJob({'registration':rg.registrations[0]})
+cj.go()
+
+
