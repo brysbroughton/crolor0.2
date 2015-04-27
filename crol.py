@@ -3,7 +3,6 @@ from urlparse import urlparse
 from datetime import datetime
 import re, os, sys, httplib, urllib
 
-
 class GenericType(object):
     """
     General template for associating properties to actions.
@@ -18,7 +17,7 @@ class GenericType(object):
             setattr(self, key, val)
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
-    
+
     def getprop(self, key):
         if self.props.has_key(key):
             return self.props[key]
@@ -76,7 +75,6 @@ class Registration(GenericType):
 class Department(GenericType):
     """
     Object handles information for an orgnaizational entity associated with a crawl
-    
     type : department
     name : department_name
     main_email : department@otc.edu
@@ -365,7 +363,7 @@ class Log(GenericType):
         self.filePointer.write(new_val)
         self.filePointer.flush()
         os.fsync(self.filePointer)
-
+    
     def closefile(self):
         self.writefile(self.foot_text)
         self.filePointer.close
@@ -391,6 +389,7 @@ class Log(GenericType):
         else:
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
+
 
 class WebLog(Log):
     """
