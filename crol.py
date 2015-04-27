@@ -289,16 +289,19 @@ class Crawl(GenericType):
         
         super(Crawl, self).__init__(**kwargs)
     
-    def start(self):
+    def start(self, funcin=None):
         """
         Begin the crawl process from url seed
         """
         head = Node({'url':self.seed_url, 'parent':'HEAD'})
         self.setprop('node_tree', head)
-        self.reccrawl(head)
+        self.reccrawl(head, funcin)
     
-    def reccrawl(self, node):
+    def reccrawl(self, node, funcin=None):
         self.getprop('visited_urls').add(node.url)
+        
+        if funcin: funcin(node)
+        
         for l in node.links:
             new_url = None
             try:
@@ -310,7 +313,7 @@ class Crawl(GenericType):
                 new_node.setprop('parent', node)
                 node.children.add(new_node)
                 if self.shouldfollow(new_url):
-                    self.reccrawl(new_node)
+                    self.reccrawl(new_node, funcin)
                 else:
                     self.getprop('visited_urls').add(new_url)
     
@@ -353,7 +356,6 @@ class Log(GenericType):
             "heading_row" : []
         }
         super(Log, self).__init__(**kwargs)
-        self.openfile()
     
     def openfile(self):
         date = datetime.now()
@@ -392,7 +394,7 @@ class Log(GenericType):
         else:
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
-
+    
 
 class WebLog(Log):
     """
@@ -406,11 +408,11 @@ class WebLog(Log):
             'filename' : 'webLog',
             'endfilename' : '.log.html',
             'head_text' : '<!DOCTYPE html><html><head></head><body><table>',
-            'foot_text' : '</table></body></html>',
+            'foot_text' : '\n</table></body></html>',
             'filePointer' : None,
-            "row_before" : '<tr>',
-            "row_after" : '</tr>',
-            "col_before" : '<td>',
+            "row_before" : '\n<tr>',
+            "row_after" : '\n</tr>',
+            "col_before" : '\n\t<td>',
             "col_after" : '</td>',
             "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
         }
