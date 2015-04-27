@@ -3,6 +3,7 @@ from urlparse import urlparse
 from datetime import datetime
 import re, os, sys, httplib, urllib
 
+
 class GenericType(object):
     """
     General template for associating properties to actions.
@@ -10,7 +11,7 @@ class GenericType(object):
     
     type: generic
     """
-    
+
     def setprop(self, key, val):
         if self.props.has_key(key):
             self.props[key] = val
@@ -23,7 +24,7 @@ class GenericType(object):
             return self.props[key]
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
-    
+
     def listprops(self):
         for key, val in self.props.iteritems():
             print "%s : %s" % (key, val)
@@ -108,7 +109,6 @@ class Registry(GenericType):
         if self.props['registrations']:
             setattr(self, 'registrations', [Registration(r) for r in self.props['registrations']])
 
-
 class CrawlReport(GenericType):
     """
     Object instatiated 1-1 with a crawl job.
@@ -121,7 +121,7 @@ class CrawlReport(GenericType):
             'page_reports' : [],
             'url_reports' : []#not sure if use
         }
-        
+
         super(CrawlReport, self).__init__(**kwargs)
         
         if self.props['page_reports']:
@@ -175,6 +175,8 @@ class Node(GenericType):
         self.props = {
             'type' : 'node',
             'url' : None,
+            'status' : None,
+            'reason' : None,
             'urlparse' : None,
             'mimetype' : None,
             'status' : None,
@@ -351,13 +353,14 @@ class Log(GenericType):
             "heading_row" : []
         }
         super(Log, self).__init__(**kwargs)
+        self.openfile()
     
     def openfile(self):
         date = datetime.now()
         date = date.strftime('%m%d%y%I%M%S')
-        self.setprop('filePointer', open(self.path+self.filename+date+self.endfilename, 'a'))
+        f = open(self.path+self.filename+date+self.endfilename, 'a')
+        self.setprop('filePointer', f)
         self.writefile(self.head_text)
-        self.headingrow(self.heading_row)
     
     def writefile(self, new_val):
         self.filePointer.write(new_val)
@@ -368,16 +371,16 @@ class Log(GenericType):
         self.writefile(self.foot_text)
         self.filePointer.close
     
-    def writerow(self, cols):
-        tempstring = ""
-        self.writefile(self.row_before)
-        for item in cols:
-            tempstring += self.col_before + item + self.col_after
-        #checking for a comma at the end of the line and removing it if it exists
-        if tempstring[len(tempstring)-1] == ",":
-            tempstring = tempstring[0:len(tempstring)-1]
-        self.writefile(tempstring)
-        self.writefile(self.row_after)
+    def writerow(self, row):
+        string_bits = []
+        string_bits.append(self.row_before)
+        for col in row:
+            string_bits.append(self.col_before)
+            string_bits.append(col)
+            string_bits.append(self.col_after)
+        string_bits.append(self.row_after)
+        string_bits = map(str, string_bits)
+        self.writefile(''.join(string_bits))
     
     def headingrow(self, headings=None):
         if headings:
