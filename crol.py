@@ -279,7 +279,7 @@ class Crawl(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'crawler',
-            'seed' : None,
+            'seed_url' : None,
             'node_tree' : None,#'HEAD'
             'visited_urls' : set([]),
             'log' : None,
@@ -291,7 +291,7 @@ class Crawl(GenericType):
         """
         Begin the crawl process from url seed
         """
-        head = Node({'url':self.seed, 'parent':'HEAD'})
+        head = Node({'url':self.seed_url, 'parent':'HEAD'})
         self.setprop('node_tree', head)
         self.reccrawl(head)
     
@@ -302,7 +302,7 @@ class Crawl(GenericType):
             try:
                 new_url = node.normalize(l)
             except IOError as error:
-                print #error
+                print 'Could not normalize url: ', new_url#error
             if new_url and new_url not in self.getprop('visited_urls'):
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
@@ -322,7 +322,7 @@ class Crawl(GenericType):
         #only crawl urls within a subsite of the input seed
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
-            seed = urlparse(self.getprop('seed'))
+            seed = urlparse(self.getprop('seed_url'))
             if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
                 return True
             else:
@@ -332,7 +332,7 @@ class Crawl(GenericType):
 
 class Log(GenericType):
     """
-    Class description.
+    Generic text log handling for crawl job
     """
     
     def __init__(self, kwargs={}):
@@ -393,7 +393,7 @@ class Log(GenericType):
 
 class WebLog(Log):
     """
-    Class description.
+    HTML log handler for crawl job
     """
     
     def __init__(self, kwargs={}):
@@ -415,7 +415,7 @@ class WebLog(Log):
 
 class CsvLog(Log):
     """
-    Class description.
+    CSV log handler for crawl job
     """
     
     def __init__(self, kwargs={}):
@@ -434,29 +434,3 @@ class CsvLog(Log):
             "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
         }
         GenericType.__init__(self, **kwargs)
-    
-    def csvTest():
-        rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
-        c=CsvLog()
-        c.openfile()
-        for row in rows:
-            c.writerow(row)
-        c.closefile()
-    
-    def webTest():
-        rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
-        #w=WebLog()
-        w=WebLog({'heading_row':['ONE', 'TWO','THREE','FOUR'],'endfilename':'.log.html','filename':'htmlLog','head_text':'<html><head></head><body><table>', 'foot_text':'</table></body></html>','row_before':'<tr>','row_after':'</tr>','col_before':'<td>','col_after':'</td>'})
-        w.listprops()
-        w.openfile()
-        for row in rows:
-            w.writerow(row)
-        w.closefile()
-    
-    def test():
-        l=Log({'heading_row':['Column 1', 'Column 2','Column 3','Column 4'],'filename':'crol','endfilename':'.log.txt','row_before':'','row_after':'\n','col_before':'','col_after':','})
-        l.openfile()
-        l.writerow(["Much Longer item than the rest of these items", "another", "still more", "last one"])
-        l.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
-        l.writerow(["Line3", "Third Row ", "Row 3", "longest one in the third row"])
-        l.closefile()
