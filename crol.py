@@ -2,7 +2,8 @@ from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
 from datetime import datetime
 import re, os, sys, httplib, urllib
-
+import smtplib
+from email.mime.text import MIMEText
 
 class GenericType(object):
     """
@@ -129,6 +130,7 @@ class CrawlReport(GenericType):
         
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
+        
 
 
 class PageReport(GenericType):
@@ -482,3 +484,35 @@ class CsvLog(Log):
         else:
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
+
+class Email(GenericType):
+    def __init__(self, kwargs={}):
+        self.props = {
+        'type' : 'email',
+        'msg_body' : '',
+        'subject' : '',
+        'from_address' : "",
+        'to_address' : "",
+        'smtp_server' : 'smtp.otc.edu',
+        'mime_type' : "html"
+        }
+        super(Email, self).__init__(**kwargs)
+    
+    def send(self):
+        if self.props['to_address'] == "":
+            raise Exception('to_address must be set in class: Email')
+        elif self.props['from_address'] == "":
+            raise Exception('from_address must be set in class: Email')
+        else:
+            #composing message using MIMEText
+            if self.props['mime_type'] == "plain":
+                msg = MIMEText(self.msg_body, 'plain')
+            else:
+                msg = MIMEText(self.msg_body, 'html')
+            msg['Subject'] = self.subject
+            msg['From'] = self.from_address
+            msg['to'] = self.to_address
+            #Email transmission with smtplib and OTC servers
+            s = smtplib.SMTP(self.smtp_server)
+            s.sendmail(self.from_address, self.to_address, msg.as_string())
+            s.quit()
