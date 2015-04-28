@@ -353,14 +353,12 @@ class Log(GenericType):
             "row_after" : '',
             "col_before" : '',
             "col_after" : '',
-            "heading_row" : []
+            "row_trim" : "right"
         }
         super(Log, self).__init__(**kwargs)
     
     def openfile(self):
-        date = datetime.now()
-        date = date.strftime('%m%d%y%I%M%S')
-        f = open(self.path+self.filename+date+self.endfilename, 'a')
+        f = open(self.path+self.filename+self.endfilename, 'w')
         self.setprop('filePointer', f)
         self.writefile(self.head_text)
     
@@ -380,20 +378,24 @@ class Log(GenericType):
             string_bits.append(self.col_before)
             string_bits.append(col)
             string_bits.append(self.col_after)
+        if self.row_trim:
+            if self.row_trim == 'left':
+                string_bits = string_bits[1:len(string_bits)]
+            elif self.row_trim == 'right':
+                string_bits = string_bits[0:len(string_bits)-1]
+            elif self.row_trim == 'both':
+                string_bits = string_bits[1:len(string_bits)-1]
+            elif self.row_trim == 'none':
+                pass
+            else:
+                raise Exception('The only values accepted for row_trim are: "left, right, both, or none". You entered %s' % self.row_trim )
+        else:
+            raise Exception('Property "row_trim" must have a value')
         string_bits.append(self.row_after)
         string_bits = map(str, string_bits)
         self.writefile(''.join(string_bits))
     
-    def headingrow(self, headings=None):
-        if headings:
-            self.writefile(self.row_before)
-            for header in  headings:
-                self.writefile(self.col_before)
-                self.writefile(header)
-                self.writefile(self.col_after)
-        else:
-            self.writefile(self.heading_row)
-        self.writefile(self.row_after)
+    
     
 
 class WebLog(Log):
@@ -414,9 +416,21 @@ class WebLog(Log):
             "row_after" : '\n</tr>',
             "col_before" : '\n\t<td>',
             "col_after" : '</td>',
-            "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
+            "heading_row" : [],
+            "row_trim" : 'none'
         }
         GenericType.__init__(self, **kwargs)
+
+    def headingrow(self, headings=None):
+        if headings:
+            self.writefile(self.row_before)
+            for header in  headings:
+                self.writefile(self.col_before)
+                self.writefile(header)
+                self.writefile(self.col_after)
+        else:
+            self.writefile(self.heading_row)
+        self.writefile(self.row_after)
 
 class CsvLog(Log):
     """
@@ -436,6 +450,19 @@ class CsvLog(Log):
             "row_after" : '\n',
             "col_before" : '',
             "col_after" : ',',
-            "heading_row" : ['Column 1', 'Column 2','Column 3','Column 4']
+            "heading_row" : [],
+            "row_trim" : "right"
         }
         GenericType.__init__(self, **kwargs)
+
+    def headingrow(self, headings=None):
+        if headings:
+            self.writefile(self.row_before)
+            for header in  headings:
+                self.writefile(self.col_before)
+                self.writefile(header)
+                self.writefile(self.col_after)
+        else:
+            self.writefile(self.heading_row)
+        self.writefile(self.row_after)
+
