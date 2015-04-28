@@ -416,21 +416,38 @@ class WebLog(Log):
             "row_after" : '\n</tr>',
             "col_before" : '\n\t<td>',
             "col_after" : '</td>',
-            "heading_row" : [],
-            "row_trim" : 'none'
+            'hrow_before' : '<tr>',
+            'hrow_after' : '</tr>',
+            'hcol_before' : '<th>',
+            'hcol_after' : '</th>',
+            "default_headings" : []
         }
         GenericType.__init__(self, **kwargs)
 
     def headingrow(self, headings=None):
+        string_bits = []
         if headings:
-            self.writefile(self.row_before)
+            string_bits.append(self.hrow_before)
             for header in  headings:
-                self.writefile(self.col_before)
-                self.writefile(header)
-                self.writefile(self.col_after)
+                string_bits.append(self.hcol_before)
+                string_bits.append(header)
+                string_bits.append(self.hcol_after)
         else:
-            self.writefile(self.heading_row)
-        self.writefile(self.row_after)
+            string_bits.append(self.default_headings)
+        string_bits = map(str, string_bits)
+        self.writefile(''.join(string_bits))
+
+    def writerow(self, row):
+        string_bits = []
+        string_bits.append(self.row_before)
+        for col in row:
+            string_bits.append(self.col_before)
+            string_bits.append(col)
+            string_bits.append(self.col_after)
+        string_bits.append(self.row_after)
+        string_bits = map(str, string_bits)
+        self.writefile(''.join(string_bits))
+
 
 class CsvLog(Log):
     """
@@ -466,3 +483,26 @@ class CsvLog(Log):
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
 
+def csvTest():
+    rows = [["Much Longer item than the rest of these items", "http://www.otc.edu", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
+    c=CsvLog()
+    c.openfile()
+    for row in rows:
+        c.writerow(row)
+    c.closefile()
+def webTest():
+    rows = [["Much Longer item than the rest of these items", "another", "still more", "last one"],["Line2", "A little longer than most others", "Row 2", "End of Row"],["Line3", "Third Row ", "Row 3", "longest one in the third row"]]
+    w=WebLog()
+    #w=WebLog({'endfilename':'.log.html','filename':'htmlLog','row_before':'<tr>','row_after':'</tr>','col_before':'<td>','col_after':'</td>'})
+    w.openfile()
+    w.headingrow(['ONE', 'TWO','THREE','FOUR'])
+    for row in rows:
+        w.writerow(row)
+    w.closefile()
+def test():
+    l=Log({'row_trim':'right', 'filename':'crol','endfilename':'.log.txt','row_before':'#','row_after':'\n','col_before':'','col_after':','})
+    l.openfile()
+    l.writerow(["Much Longer item than the rest of these items", "another", "still more", "last one"])
+    l.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
+    l.writerow(["Line3", "Third Row ", "Row 3", "longest one in the third row"])
+    l.closefile()
