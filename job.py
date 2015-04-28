@@ -35,8 +35,9 @@ class CrawlJob(crol.GenericType):
             self.setprop('log', crol.WebLog(self.log or {}))
 
     def go(self):
+        self.log.filename = self.registration.department.name
         self.log.openfile()
-        self.setprop('crawl', crol.Crawl({'seed_url':self.registration.site}))
+        self.setprop('crawl', crol.Crawl({'seed_url':self.registration.site, 'log':self.log}))
         self.crawl.start(self.lognode)#need to pass logging function here
         self.log.closefile()
         report_location = self.log.path+self.log.filename+self.log.endfilename
@@ -46,9 +47,9 @@ class CrawlJob(crol.GenericType):
         from_address = 'web@otc.edu'
         email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
         e = crol.Email(email_props)
-        e.send()
+        #e.send()
     def lognode(self, node):
-        self.log.writerow([node.status, node.reason, node.mimetype, node.url])
+        self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent])
 
 
 ##this is how the CrawlJob is used
