@@ -321,7 +321,6 @@ class Crawl(GenericType):
         """
         Take node object, return boolean
         """
-        
         #extend to evalute following
         #don't crawl the same url 2x
         #only crawl urls within a subsite of the input seed
@@ -335,6 +334,7 @@ class Crawl(GenericType):
         else:
             return False
 
+            
 class Log(GenericType):
     """
     Generic text log handling for crawl job
