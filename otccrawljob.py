@@ -1,7 +1,8 @@
-import job
-import crol
+import job, crol, otcregistry
 
-rg = job.rg
-for r in rg.registrations:
-    cj = job.CrawlJob({'registration':r})
-    cj.go()
+def start():
+    for r in otcregistry.registrations:
+        cj = job.CrawlJob({'registration':r})
+        cj.go()
+
+start()
