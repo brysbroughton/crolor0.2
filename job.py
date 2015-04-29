@@ -40,7 +40,7 @@ class CrawlJob(crol.GenericType):
         self.crawl.start(self.lognode)#need to pass logging function here
         self.log.closefile()
         report_location = self.log.path+self.log.filename+self.log.endfilename
-        msg = '<p>You can review the report at: ' + report_location
+        msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
         subject = 'Crawl Completed'
         to_address = self.registration.department.main_email
         from_address = 'web@otc.edu'
