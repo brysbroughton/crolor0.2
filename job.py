@@ -23,7 +23,8 @@ class CrawlJob(crol.GenericType):
             'type' : 'crawljob',
             'registration' : None,
             'log' : None,
-            'crawl' : None
+            'crawl' : None,
+            'has_broken_links' : False
         }
         
         super(CrawlJob, self).__init__(**kwargs)
@@ -40,15 +41,18 @@ class CrawlJob(crol.GenericType):
         self.setprop('crawl', crol.Crawl({'seed_url':self.registration.site, 'log':self.log}))
         self.crawl.start(self.lognode)#need to pass logging function here
         self.log.closefile()
-        report_location = self.log.path+self.log.filename+self.log.endfilename
-        msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
-        subject = 'Crawl Completed'
-        to_address = self.registration.department.main_email
-        from_address = 'web@otc.edu'
-        email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
-        e = crol.Email(email_props)
-        e.send()
+        if self.has_broken_links:
+            report_location = self.log.path+self.log.filename+self.log.endfilename
+            msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
+            subject = 'Crawl Completed'
+            to_address = self.registration.department.main_email
+            from_address = 'web@otc.edu'
+            email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
+            e = crol.Email(email_props)
+            e.send()
     def lognode(self, node):
+        if str(node.status) == '404':
+            self.has_broken_links = True
         if node.parent == "HEAD":
             self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent])
         else:
