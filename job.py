@@ -47,7 +47,7 @@ class CrawlJob(crol.GenericType):
         from_address = 'web@otc.edu'
         email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
         e = crol.Email(email_props)
-        #e.send()
+        e.send()
     def lognode(self, node):
         self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent])
 

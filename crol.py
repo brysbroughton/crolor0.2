@@ -178,6 +178,8 @@ class Node(GenericType):
         self.props = {
             'type' : 'node',
             'url' : None,
+            'status' : None,
+            'reason' : None,
             'urlparse' : None,
             'mimetype' : None,
             'status' : None,
@@ -192,12 +194,9 @@ class Node(GenericType):
         if not self.url:
             raise Exception("Node object must be created with a url")
         
-        if not self.status == 'EMPTY' and \
-           not self.status == 'HASH' and \
-           not self.status == 'MAILTO':
-            self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
-            self.setprop('urlparse', urlparse(self.getprop('url')))
-            self.request()
+        self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
+        self.setprop('urlparse', urlparse(self.getprop('url')))
+        self.request()
     
     def normalize(self, link):
         """
@@ -207,17 +206,11 @@ class Node(GenericType):
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
         
-        #check and raise IOError for empty and hash
-        error_before = 'Could not normalize '
-        error_after = ' url: (' + link + ')'
-        if link == '':
-            raise IOError(error_before + '[empty]' + error_after)
-        if link.startswith('#'):
-            raise IOError(error_before + '[hash]' + error_after)
         new_parsed = urlparse(link.replace('\n', ''))
-        #check and raise IOError for mailto
+        #check and throw exception for mailto
         if new_parsed.scheme == 'mailto':
-            raise IOError(error_before + '[mailto]' + error_after)
+            raise IOError('Could not normalize mailto.')
+        #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
         
@@ -303,7 +296,6 @@ class Crawl(GenericType):
         """
         Begin the crawl process from url seed
         """
-        
         head = Node({'url':self.seed_url, 'parent':'HEAD'})
         self.setprop('node_tree', head)
         if funcin: funcin(head)
@@ -316,8 +308,8 @@ class Crawl(GenericType):
             new_url = None
             try:
                 new_url = node.normalize(l)
-            except IOError as error_message:
-                print error_message
+            except IOError as error:
+                print 'Could not normalize url: ', new_url#error
             if new_url and new_url not in self.getprop('visited_urls'):
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
@@ -327,19 +319,6 @@ class Crawl(GenericType):
                     self.reccrawl(new_node, funcin)
                 else:
                     self.getprop('visited_urls').add(new_url)
-            elif not new_url:
-                bad_url = l
-                bad_status = ''
-                if l == '':
-                    bad_url = 'EMPTY'
-                    bad_status = 'EMPTY'
-                elif l.startswith('#'):
-                    bad_status = 'HASH'
-                elif l.startswith('mailto'):
-                    bad_status = 'MAILTO'
-                bad_node = Node({'url':bad_url, 'status':bad_status})
-                bad_node.setprop('parent', node)
-                if funcin: funcin(bad_node)
     
     def shouldfollow(self, url):
         """
