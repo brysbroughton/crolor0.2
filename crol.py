@@ -178,8 +178,6 @@ class Node(GenericType):
         self.props = {
             'type' : 'node',
             'url' : None,
-            'status' : None,
-            'reason' : None,
             'urlparse' : None,
             'mimetype' : None,
             'status' : None,
@@ -412,7 +410,8 @@ class WebLog(Log):
             'path' : './',
             'filename' : 'webLog',
             'endfilename' : '.log.html',
-            'head_text' : '<!DOCTYPE html><html><head></head><body><table>',
+            'css' : '',
+            'head_text' : '<!DOCTYPE html><html><head><style type="text/css">'+self.css+'</style></head><body><table>',
             'foot_text' : '\n</table></body></html>',
             'filePointer' : None,
             "row_before" : '\n<tr>',
@@ -444,12 +443,31 @@ class WebLog(Log):
         string_bits = []
         string_bits.append(self.row_before)
         for col in row:
+            if self.statuscolor == 'RED': self.col_before = '\n\t<td class="red">'
+            if self.statuscolor == 'GOLD': self.col_before = '\n\t<td class="gold">'
+            if self.statuscolor == 'GREEN': self.col_before = '\n\t<td class="green">'
+            else: self.col_before = '\n\t<td>'
             string_bits.append(self.col_before)
             string_bits.append(str(col).replace('<','&lt;').replace('>','&gt;'))
             string_bits.append(self.col_after)
         string_bits.append(self.row_after)
         string_bits = map(str, string_bits)
         self.writefile(''.join(string_bits))
+    
+    def statuscolor(self, status):
+        #error http statuses
+        if status == '404': return 'RED'
+        
+        #warning http statuses
+        elif status == '307' and\
+             status == '308': return 'GOLD'
+        
+        #ok http statuses
+        elif status == '200': return 'GREEN'
+        
+        #no http status
+        else: return None
+    
 
 
 class CsvLog(Log):
