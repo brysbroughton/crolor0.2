@@ -49,7 +49,10 @@ class CrawlJob(crol.GenericType):
         e = crol.Email(email_props)
         e.send()
     def lognode(self, node):
-        self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent])
+        if node.parent == "HEAD":
+            self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent])
+        else:
+            self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent.url])
 
 
 ##this is how the CrawlJob is used
