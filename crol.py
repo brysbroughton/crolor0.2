@@ -445,7 +445,7 @@ class WebLog(Log):
         string_bits.append(self.row_before)
         for col in row:
             string_bits.append(self.col_before)
-            string_bits.append(col.replace('<','&lt;').replace('>','&gt;'))
+            string_bits.append(str(col).replace('<','&lt;').replace('>','&gt;'))
             string_bits.append(self.col_after)
         string_bits.append(self.row_after)
         string_bits = map(str, string_bits)
