@@ -46,8 +46,11 @@ class CrawlJob(crol.GenericType):
             msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
             subject = 'Crawl Completed'
             to_address = self.registration.department.main_email
+            cc_address = ''
+            files = [report_location]
             from_address = 'web@otc.edu'
-            email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
+            file_name = self.log.filename + self.log.endfilename
+            email_props = {'files':files, 'filename':file_name, 'cc_address':cc_address, 'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
             e = crol.Email(email_props)
             e.send()
     def lognode(self, node):

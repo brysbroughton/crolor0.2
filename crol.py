@@ -3,6 +3,7 @@ from urlparse import urlparse
 from datetime import datetime
 import re, os, sys, httplib, urllib
 import smtplib
+import email,email.encoders,email.mime.base
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
@@ -266,6 +267,15 @@ class Node(GenericType):
         
         links = set()
         soup = bs(html)
+        metalinks = soup.findAll('meta', attrs={'http-equiv':True})
+        for m in metalinks:
+            index = str(m).find('url=')
+            end = str(m).find('"',index, len(str(m)))
+            if index != -1:
+                link = str(m)[index+4:end]
+                print link
+                links.add(link)
+            #print m.find('url=')
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
             
         for a in attrs:
@@ -494,11 +504,16 @@ class Email(GenericType):
         'subject' : '',
         'from_address' : "",
         'to_address' : "",
+        'cc_address' : '',
+        'files' : [],
+        'filename' : '',
         'smtp_server' : 'smtp.otc.edu',
         'mime_type' : "html"
         }
         super(Email, self).__init__(**kwargs)
     def send(self):
+        has_cc = False
+        addresses = [self.to_address]
         if self.props['to_address'] == "":
             raise Exception('to_address must be set in class: Email')
         elif self.props['from_address'] == "":
@@ -508,15 +523,26 @@ class Email(GenericType):
             msg = MIMEMultipart()
             msg['Subject'] = self.subject
             msg['From'] = self.from_address
-            msg['to'] = self.to_address
+            msg['To'] = self.to_address
+            if self.cc_address != "":
+                msg['CC'] = self.cc_address
+                has_cc = True
+                addresses.append(self.cc_address)
             if self.props['mime_type'] == "plain":
                 message = MIMEText(self.msg_body, 'plain')
                 msg.attach(message)
             else:
                 message = MIMEText(self.msg_body, 'html')
                 msg.attach(message)
-            
+            for f in self.files:
+                fp = open(f, 'rb')
+                # now attach the file
+                fileMsg = email.mime.base.MIMEBase('application','html')
+                fileMsg.set_payload(file(f).read())
+                email.encoders.encode_base64(fileMsg)
+                fileMsg.add_header('Content-Disposition','attachment;filename=%s' % self.filename)
+                msg.attach(fileMsg)
             #Email transmission with smtplib and OTC servers
             s = smtplib.SMTP(self.smtp_server)
-            s.sendmail(self.from_address, self.to_address, msg.as_string())
+            s.sendmail(self.from_address, addresses, msg.as_string())
             s.quit()
