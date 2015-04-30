@@ -11,7 +11,7 @@ registry_data = {
             'actions' : ['crawl']
         },
         {
-            'site' : 'http://www.otc.edu/news',
+            'site' : 'http://www.otc.edu/news/',
             'department' : {
                 'name' : 'Public Relations',
                 'main_email' : 'wrighta@otc.edu',

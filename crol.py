@@ -267,6 +267,15 @@ class Node(GenericType):
         
         links = set()
         soup = bs(html)
+        metalinks = soup.findAll('meta', attrs={'http-equiv':True})
+        for m in metalinks:
+            index = str(m).find('url=')
+            end = str(m).find('"',index, len(str(m)))
+            if index != -1:
+                link = str(m)[index+4:end]
+                print link
+                links.add(link)
+            #print m.find('url=')
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
             
         for a in attrs:
