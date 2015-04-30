@@ -494,11 +494,14 @@ class Email(GenericType):
         'subject' : '',
         'from_address' : "",
         'to_address' : "",
+        'cc_address' : '',
         'smtp_server' : 'smtp.otc.edu',
         'mime_type' : "html"
         }
         super(Email, self).__init__(**kwargs)
     def send(self):
+        has_cc = False
+        addresses = [self.to_address]
         if self.props['to_address'] == "":
             raise Exception('to_address must be set in class: Email')
         elif self.props['from_address'] == "":
@@ -508,7 +511,11 @@ class Email(GenericType):
             msg = MIMEMultipart()
             msg['Subject'] = self.subject
             msg['From'] = self.from_address
-            msg['to'] = self.to_address
+            msg['To'] = self.to_address
+            if self.cc_address != "":
+                msg['CC'] = self.cc_address
+                has_cc = True
+                addresses.append(self.cc_address)
             if self.props['mime_type'] == "plain":
                 message = MIMEText(self.msg_body, 'plain')
                 msg.attach(message)
@@ -518,5 +525,5 @@ class Email(GenericType):
             
             #Email transmission with smtplib and OTC servers
             s = smtplib.SMTP(self.smtp_server)
-            s.sendmail(self.from_address, self.to_address, msg.as_string())
+            s.sendmail(self.from_address, addresses, msg.as_string())
             s.quit()
