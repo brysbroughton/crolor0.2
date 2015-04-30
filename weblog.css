@@ -7,3 +7,5 @@
   td.orange {border-color:#D49b00; background:#F3CFAA}
   td.red {border-color:#BE4C39; background:#E5B8B1}
   td.purple {border-color:#9351A6; background:#D4BADC}
+  a {color:#444}
+  a:hover {color:#BE4C39}
