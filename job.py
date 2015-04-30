@@ -54,6 +54,7 @@ class CrawlJob(crol.GenericType):
         if str(node.status) == '404':
             self.has_broken_links = True
         if node.parent == "HEAD":
+            self.log.writerow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
             self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent])
         else:
             self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent.url])
