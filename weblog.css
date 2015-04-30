@@ -1,0 +1,9 @@
+  table {margin:0 auto; color:#444; border:1px solid #A9A9A9}
+  tr:nth-child(even) {background:#EDEDED}
+  tr:nth-child(odd) {background:#F7F7F7}
+  td {padding:5px; border:1px solid #DDD}
+  td.blue {border-color:#4472B9; background:#B5C7E3}
+  td.green {border-color:#4CA454; background:#B8DBBB}
+  td.orange {border-color:#D49b00; background:#F3CFAA}
+  td.red {border-color:#BE4C39; background:#E5B8B1}
+  td.purple {border-color:#9351A6; background:#D4BADC}

@@ -410,8 +410,7 @@ class WebLog(Log):
             'path' : './',
             'filename' : 'webLog',
             'endfilename' : '.log.html',
-            'css' : '',
-            'head_text' : '<!DOCTYPE html><html><head><style type="text/css">'+self.css+'</style></head><body><table>',
+            'head_text' : '<!DOCTYPE html><html><head></head><body><table>',
             'foot_text' : '\n</table></body></html>',
             'filePointer' : None,
             "row_before" : '\n<tr>',
@@ -425,6 +424,7 @@ class WebLog(Log):
             "default_headings" : []
         }
         GenericType.__init__(self, **kwargs)
+        self.injectcss()
 
     def headingrow(self, headings=None):
         string_bits = []
@@ -443,9 +443,11 @@ class WebLog(Log):
         string_bits = []
         string_bits.append(self.row_before)
         for col in row:
-            if self.statuscolor == 'RED': self.col_before = '\n\t<td class="red">'
-            if self.statuscolor == 'GOLD': self.col_before = '\n\t<td class="gold">'
-            if self.statuscolor == 'GREEN': self.col_before = '\n\t<td class="green">'
+            if self.statuscolor(col) == 'BLUE': self.col_before = '\n\t<td class="blue">'
+            elif self.statuscolor(col) == 'GREEN': self.col_before = '\n\t<td class="green">'
+            elif self.statuscolor(col) == 'ORANGE': self.col_before = '\n\t<td class="orange">'
+            elif self.statuscolor(col) == 'RED': self.col_before = '\n\t<td class="red">'
+            elif self.statuscolor(col) == 'PURPLE': self.col_before = '\n\t<td class="purple">'
             else: self.col_before = '\n\t<td>'
             string_bits.append(self.col_before)
             string_bits.append(str(col).replace('<','&lt;').replace('>','&gt;'))
@@ -455,19 +457,91 @@ class WebLog(Log):
         self.writefile(''.join(string_bits))
     
     def statuscolor(self, status):
-        #error http statuses
-        if status == '404': return 'RED'
-        
-        #warning http statuses
-        elif status == '307' and\
-             status == '308': return 'GOLD'
-        
-        #ok http statuses
-        elif status == '200': return 'GREEN'
-        
+        #1xx informational status
+        if status == 100 or\
+           status == 101 or\
+           status == 102 or\
+           status == 103 or\
+           status == 122: return 'BLUE'
+        #2xx success status
+        if status == 200 or\
+           status == 201 or\
+           status == 202 or\
+           status == 203 or\
+           status == 204 or\
+           status == 205 or\
+           status == 206 or\
+           status == 207 or\
+           status == 208 or\
+           status == 226: return 'GREEN'
+        #3xx redirection status
+        if status == 300 or\
+           status == 301 or\
+           status == 302 or\
+           status == 303 or\
+           status == 304 or\
+           status == 305 or\
+           status == 306 or\
+           status == 307 or\
+           status == 308: return 'ORANGE'
+        #4xx client error status
+        if status == 400 or\
+           status == 401 or\
+           status == 402 or\
+           status == 403 or\
+           status == 404 or\
+           status == 405 or\
+           status == 406 or\
+           status == 407 or\
+           status == 408 or\
+           status == 409 or\
+           status == 410 or\
+           status == 411 or\
+           status == 412 or\
+           status == 413 or\
+           status == 414 or\
+           status == 415 or\
+           status == 416 or\
+           status == 417 or\
+           status == 418 or\
+           status == 420 or\
+           status == 422 or\
+           status == 423 or\
+           status == 424 or\
+           status == 426 or\
+           status == 428 or\
+           status == 429 or\
+           status == 431 or\
+           status == 444 or\
+           status == 449 or\
+           status == 450 or\
+           status == 451 or\
+           status == 499: return 'RED'
+        #5xx client server error
+        if status == 500 or\
+           status == 501 or\
+           status == 502 or\
+           status == 503 or\
+           status == 504 or\
+           status == 505 or\
+           status == 506 or\
+           status == 507 or\
+           status == 508 or\
+           status == 509 or\
+           status == 510 or\
+           status == 511 or\
+           status == 598 or\
+           status == 599: return 'PURPLE'
         #no http status
         else: return None
     
+    def injectcss(self):
+        try:
+            css_file = open('weblog.css', 'r')
+            css = css_file.read()
+            self.head_text = self.head_text.replace('<head></head>', '<head><style type="text/css">\n'+css+'\n</style></head>')
+        except IOError as error:
+            print 'Error opening weblog.css file.'
 
 
 class CsvLog(Log):
