@@ -53,6 +53,7 @@ class CrawlJob(crol.GenericType):
             email_props = {'files':files, 'filename':file_name, 'cc_address':cc_address, 'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
             e = crol.Email(email_props)
             e.send()
+            
     def lognode(self, node):
         if str(node.status) == '404':
             self.has_broken_links = True

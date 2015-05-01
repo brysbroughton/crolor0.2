@@ -196,9 +196,12 @@ class Node(GenericType):
             raise Exception("Node object must be created with a url")
         
         self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
+        print self.url #to show progess in console
         self.setprop('urlparse', urlparse(self.getprop('url')))
         if self.urlparse.scheme in ['http', 'https']:
             self.request()
+        elif self.urlparse.scheme == 'mailto':
+            self.checkemail()
     
     def normalize(self, link):
         """
@@ -290,6 +293,15 @@ class Node(GenericType):
             ))
         
         return links
+        
+    def checkemail(self):
+        """
+        Called on node that contains an email link.
+        Evaluates the link for correctness and sets internal properties accordingly
+        """
+        valid = re.match('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,4}$', self.urlparse.path)
+        self.setprop('status', '200' if valid else '404')
+        self.setprop('reason', 'Address correctly formatted' if valid else 'invalid email address')
 
 
 class Crawl(GenericType):
