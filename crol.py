@@ -179,6 +179,7 @@ class Node(GenericType):
         self.props = {
             'type' : 'node',
             'url' : None,
+            'response' : None,#replace by response object from httplib
             'status' : None,
             'reason' : None,
             'urlparse' : None,
@@ -260,6 +261,7 @@ class Node(GenericType):
                     
         conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
+        self.setprop('response', response)
         self.setprop('status', response.status)
         self.setprop('reason', response.reason)
         #check for text/html mime type to scrape html
