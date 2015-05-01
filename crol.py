@@ -197,7 +197,8 @@ class Node(GenericType):
         
         self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
         self.setprop('urlparse', urlparse(self.getprop('url')))
-        self.request()
+        if self.urlparse.scheme in ['http', 'https']:
+            self.request()
     
     def normalize(self, link):
         """
@@ -210,7 +211,7 @@ class Node(GenericType):
         new_parsed = urlparse(link.replace('\n', ''))
         #check and throw exception for mailto
         if new_parsed.scheme == 'mailto':
-            raise IOError('Could not normalize mailto.')
+            return ':'.join(['mailto', new_parsed.path])
         #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
@@ -247,7 +248,13 @@ class Node(GenericType):
         """
         
         #connect and collect node.url info
-        conn = httplib.HTTPConnection(self.urlparse.netloc)
+        if self.urlparse.scheme == 'http':
+            conn = httplib.HTTPConnection(self.urlparse.netloc)
+        elif self.urlparse.scheme == 'https':
+            conn = httplib.HTTPSConnection(self.urlparse.netloc)
+        else:
+            raise Exception("Node attempted to request unsupported protocol: "+self.url)
+                    
         conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
         self.setprop('status', response.status)
@@ -273,9 +280,8 @@ class Node(GenericType):
             end = str(m).find('"',index, len(str(m)))
             if index != -1:
                 link = str(m)[index+4:end]
-                print link
                 links.add(link)
-            #print m.find('url=')
+
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
             
         for a in attrs:
@@ -333,13 +339,14 @@ class Crawl(GenericType):
     def shouldfollow(self, url):
         """
         Take node object, return boolean
-        """
-        #extend to evalute following
         #don't crawl the same url 2x
         #only crawl urls within a subsite of the input seed
+        """
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
+            print url.path[:len(seed.path)]
+            print seed.path
             if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
                 return True
             else:

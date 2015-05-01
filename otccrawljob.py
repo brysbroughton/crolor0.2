@@ -5,4 +5,4 @@ def start():
         cj = job.CrawlJob({'registration':r})
         cj.go()
 
-start()
+#start()
