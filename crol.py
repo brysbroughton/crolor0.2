@@ -410,22 +410,28 @@ class WebLog(Log):
             'path' : './',
             'filename' : 'webLog',
             'endfilename' : '.log.html',
-            'head_text' : '<!DOCTYPE html><html><head></head><body><table>',
-            'foot_text' : '\n</table></body></html>',
+            'html_before' : '<!DOCTYPE html><html><head></head><body>',
+            'html_after' : '\n</body></html>',
             'filePointer' : None,
-            "row_before" : '\n<tr>',
-            "row_after" : '\n</tr>',
-            "col_before" : '\n\t<td>',
-            "col_after" : '</td>',
-            'hrow_before' : '<tr>',
-            'hrow_after' : '</tr>',
-            'hcol_before' : '<th>',
-            'hcol_after' : '</th>',
-            "default_headings" : []
+            'table_class': '\n<div class="table">',
+            'row_class': '\n\t<div class="row">',
+            'col_class': '\n\t\t<div class="col">',
+            'class_after': '</div>',
+            'tables': set([]),
+            'default_headings' : []
         }
         GenericType.__init__(self, **kwargs)
         self.injectcss()
-
+    
+    def openfile(self):
+        f = open(self.path+self.filename+self.endfilename, 'w')
+        self.setprop('filePointer', f)
+    
+    def closefile(self):
+        for t in self.tables:
+            self.writefile(''.join(t))
+        self.filePointer.close
+    
     def headingrow(self, headings=None):
         string_bits = []
         if headings:
@@ -438,24 +444,35 @@ class WebLog(Log):
             string_bits.append(self.default_headings)
         string_bits = map(str, string_bits)
         self.writefile(''.join(string_bits))
+    
+    def createtable(self):
+        table = {
+            'before': self.table_class,
+            'content': '',
+            'after': self.class_after
+        }
+        self.tables.add(table)
+        return table
 
-    def writerow(self, row):
+    def writerow(self, row, table):
         string_bits = []
-        string_bits.append(self.row_before)
+        string_bits.append(self.row_class)
         for col in row:
-            if self.statuscolor(col) == 'BLUE': string_bits.append('\n\t<td class="blue">')
-            elif self.statuscolor(col) == 'GREEN': string_bits.append('\n\t<td class="green">')
-            elif self.statuscolor(col) == 'ORANGE': string_bits.append('\n\t<td class="orange">')
-            elif self.statuscolor(col) == 'RED': string_bits.append('\n\t<td class="red">')
-            elif self.statuscolor(col) == 'PURPLE': string_bits.append('\n\t<td class="purple">')
-            elif self.isurl(col): string_bits.append(self.col_before + '<a href="'+col+'" target="_blank">')
-            else: string_bits.append(self.col_before)
+            if self.statuscolor(col) == 'BLUE': string_bits.append(self.col_class.replace('class="col"', 'class="col blue"'))
+            elif self.statuscolor(col) == 'GREEN': string_bits.append(self.col_class.replace('class="col"', 'class="col green"'))
+            elif self.statuscolor(col) == 'ORANGE': string_bits.append(self.col_class.replace('class="col"', 'class="col orange"'))
+            elif self.statuscolor(col) == 'RED': string_bits.append(self.col_class.replace('class="col"', 'class="col red"'))
+            elif self.statuscolor(col) == 'PURPLE': string_bits.append(self.col_class.replace('class="col"', 'class="col purple"'))
+            elif self.isurl(col): string_bits.append(self.col_class + '<a href="'+col+'" target="_blank">')
+            else: string_bits.append(self.col_class)
             string_bits.append(str(col).replace('<','&lt;').replace('>','&gt;'))
-            if self.isurl(col): string_bits.append('</a>' + self.col_after)
-            else: string_bits.append(self.col_after)
-        string_bits.append(self.row_after)
-        string_bits = map(str, string_bits)
-        self.writefile(''.join(string_bits))
+            if self.isurl(col): string_bits.append('</a>' + self.class_after)
+            else: string_bits.append(self.class_after)
+        string_bits.append(self.class_after)
+        table.content = map(str, string_bits)
+        
+        #string_bits = map(str, string_bits)
+        #self.writefile(''.join(string_bits))
     
     def isurl(self, string):
         string = str(string)
