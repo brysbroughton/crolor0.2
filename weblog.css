@@ -5,9 +5,19 @@
   tr:nth-child(odd) {background:#F7F7F7}
   td {padding:5px; border:1px solid #DDD}
   td.blue {text-align:center; border-color:#4472B9; background:#B5C7E3}
+  tr:hover td.blue ~ td {border-color:#4472B9; background:#B5C7E3}
   td.green {text-align:center; border-color:#4CA454; background:#B8DBBB}
+  tr:hover td.green ~ td {border-color:#4CA454; background:#B8DBBB}
   td.orange {text-align:center; border-color:#D49b00; background:#F3CFAA}
+  tr:hover td.orange ~ td {border-color:#D49b00; background:#F3CFAA}
   td.red {text-align:center; border-color:#BE4C39; background:#E5B8B1}
+  tr:hover td.red ~ td {border-color:#BE4C39; background:#E5B8B1}
   td.purple {text-align:center; border-color:#9351A6; background:#D4BADC}
+  tr:hover td.purple ~ td {border-color:#9351A6; background:#D4BADC}
   a {color:#444}
-  a:hover {color:#BE4C39}
+  a:hover {color:#FFF}
+  td.blue ~ td > a:hover {color:#4472B9}
+  td.green ~ td > a:hover {color:#4CA454}
+  td.orange ~ td > a:hover {color:#D49b00}
+  td.red ~ td > a:hover {color:#BE4C39}
+  td.purple ~ td > a:hover {color:#9351A6}
