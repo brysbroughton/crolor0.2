@@ -1,23 +1,24 @@
-  body {margin:8px 0}
-  table {margin:0 auto; color:#444; border:1px solid #A9A9A9}
-  tr:first-child td {font-weight:700; text-align:center}
-  tr:nth-child(even) {background:#EDEDED}
-  tr:nth-child(odd) {background:#F7F7F7}
-  td {padding:5px; border:1px solid #DDD}
-  td.blue {text-align:center; border-color:#4472B9; background:#B5C7E3}
-  tr:hover td.blue ~ td {border-color:#4472B9; background:#B5C7E3}
-  td.green {text-align:center; border-color:#4CA454; background:#B8DBBB}
-  tr:hover td.green ~ td {border-color:#4CA454; background:#B8DBBB}
-  td.orange {text-align:center; border-color:#D49b00; background:#F3CFAA}
-  tr:hover td.orange ~ td {border-color:#D49b00; background:#F3CFAA}
-  td.red {text-align:center; border-color:#BE4C39; background:#E5B8B1}
-  tr:hover td.red ~ td {border-color:#BE4C39; background:#E5B8B1}
-  td.purple {text-align:center; border-color:#9351A6; background:#D4BADC}
-  tr:hover td.purple ~ td {border-color:#9351A6; background:#D4BADC}
-  a {color:#444}
-  a:hover {color:#FFF}
-  td.blue ~ td > a:hover {color:#4472B9}
-  td.green ~ td > a:hover {color:#4CA454}
-  td.orange ~ td > a:hover {color:#D49b00}
-  td.red ~ td > a:hover {color:#BE4C39}
-  td.purple ~ td > a:hover {color:#9351A6}
+  body {margin:0}
+    div.table {display:table; margin:10px auto; color:#444; border:1px solid #A9A9A9; border-spacing:2px}
+      div.row {display:table-row}
+      div.row:first-child div.col {font-weight:700; text-align:center}
+      div.row:nth-child(even) {background:#EDEDED}
+      div.row:nth-child(odd) {background:#F7F7F7}
+        div.col {display:table-cell; padding:5px; border:1px solid #DDD}
+        div.col.blue {text-align:center; border-color:#4472B9; background:#B5C7E3}
+          div.row:hover div.col.blue ~ div {border-color:#4472B9; background:#B5C7E3}
+        div.col.green {text-align:center; border-color:#4CA454; background:#B8DBBB}
+          div.row:hover div.col.green ~ div {border-color:#4CA454; background:#B8DBBB}
+        div.col.orange {text-align:center; border-color:#D49b00; background:#F3CFAA}
+          div.row:hover div.col.orange ~ div {border-color:#D49b00; background:#F3CFAA}
+        div.col.red {text-align:center; border-color:#BE4C39; background:#E5B8B1}
+          div.row:hover div.col.red ~ div {border-color:#BE4C39; background:#E5B8B1}
+        div.col.purple {text-align:center; border-color:#9351A6; background:#D4BADC}
+          div.row:hover div.col.purple ~ div {border-color:#9351A6; background:#D4BADC}
+          a {color:#444}
+            a:hover {color:#FFF}
+            div.col.blue ~ div > a:hover {color:#4472B9}
+            div.col.green ~ div > a:hover {color:#4CA454}
+            div.col.orange ~ div > a:hover {color:#D49b00}
+            div.col.red ~ div > a:hover {color:#BE4C39}
+            div.col.purple ~ div > a:hover {color:#9351A6}

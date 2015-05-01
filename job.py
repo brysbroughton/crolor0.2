@@ -40,6 +40,7 @@ class CrawlJob(crol.GenericType):
         self.log.openfile()
         self.setprop('crawl', crol.Crawl({'seed_url':self.registration.site, 'log':self.log}))
         self.crawl.start(self.lognode)#need to pass logging function here
+        self.logstats()
         self.log.closefile()
         if self.has_broken_links:
             report_location = self.log.path+self.log.filename+self.log.endfilename
@@ -54,10 +55,17 @@ class CrawlJob(crol.GenericType):
         if str(node.status) == '404':
             self.has_broken_links = True
         if node.parent == "HEAD":
-            self.log.writerow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
-            self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent])
+            self.log.addtable()
+            self.log.writerow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'], self.log.tables[0])
+            self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent], self.log.tables[0])
         else:
-            self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent.url])
+            self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent.url], self.log.tables[0])
+    
+    def logstats(self):
+        self.log.addtable()
+        self.log.writerow(['STAT NAME', 'VALUE'], self.log.tables[1])
+        self.log.writerow(['Broken URLs Found:', '999'], self.log.tables[1])
+        self.log.writerow(['Redirect URLs Found:', '999'], self.log.tables[1])
 
 
 ##this is how the CrawlJob is used

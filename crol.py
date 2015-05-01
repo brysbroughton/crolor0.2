@@ -410,14 +410,14 @@ class WebLog(Log):
             'path' : './',
             'filename' : 'webLog',
             'endfilename' : '.log.html',
-            'html_before' : '<!DOCTYPE html><html><head></head><body>',
+            'html_before' : '<!DOCTYPE html><html>\n<head></head>\n<body>',
             'html_after' : '\n</body></html>',
             'filePointer' : None,
             'table_class': '\n<div class="table">',
-            'row_class': '\n\t<div class="row">',
-            'col_class': '\n\t\t<div class="col">',
+            'row_class': '\n\n<div class="row">',
+            'col_class': '\n<div class="col">',
             'class_after': '</div>',
-            'tables': set([]),
+            'tables': [],
             'default_headings' : []
         }
         GenericType.__init__(self, **kwargs)
@@ -426,34 +426,22 @@ class WebLog(Log):
     def openfile(self):
         f = open(self.path+self.filename+self.endfilename, 'w')
         self.setprop('filePointer', f)
+        self.writefile(self.html_before)
     
     def closefile(self):
         for t in self.tables:
-            self.writefile(''.join(t))
+            self.writefile(t['before'] + t['content'] + t['after'])
+        self.writefile(self.html_after)
         self.filePointer.close
     
-    def headingrow(self, headings=None):
-        string_bits = []
-        if headings:
-            string_bits.append(self.hrow_before)
-            for header in  headings:
-                string_bits.append(self.hcol_before)
-                string_bits.append(header)
-                string_bits.append(self.hcol_after)
-        else:
-            string_bits.append(self.default_headings)
-        string_bits = map(str, string_bits)
-        self.writefile(''.join(string_bits))
-    
-    def createtable(self):
+    def addtable(self):
         table = {
             'before': self.table_class,
             'content': '',
             'after': self.class_after
         }
-        self.tables.add(table)
-        return table
-
+        self.tables.append(table)
+    
     def writerow(self, row, table):
         string_bits = []
         string_bits.append(self.row_class)
@@ -469,9 +457,8 @@ class WebLog(Log):
             if self.isurl(col): string_bits.append('</a>' + self.class_after)
             else: string_bits.append(self.class_after)
         string_bits.append(self.class_after)
-        table.content = map(str, string_bits)
-        
-        #string_bits = map(str, string_bits)
+        string_bits = map(str, string_bits)
+        table['content'] += ''.join(string_bits)
         #self.writefile(''.join(string_bits))
     
     def isurl(self, string):
@@ -497,7 +484,7 @@ class WebLog(Log):
         try:
             css_file = open('weblog.css', 'r')
             css = css_file.read()
-            self.head_text = self.head_text.replace('<head></head>', '<head><style type="text/css">\n'+css+'\n</style></head>')
+            self.html_before = self.html_before.replace('<head></head>', '<head><style type="text/css">\n'+css+'\n</style></head>')
         except IOError as error:
             print 'Error opening weblog.css file.'
 
