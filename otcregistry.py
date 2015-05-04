@@ -19,9 +19,9 @@ registry_data = {
             'actions' : ['crawl','log']
         },
         {
-            'site' : 'http://www.otc.edu/it',
+            'site' : 'http://news.otc.edu/',
             'department' : {
-                'name' : 'Technical Services',
+                'name' : 'News',
                 'main_email' : 'wrighta@otc.edu'
             }
         }

@@ -333,6 +333,7 @@ class Crawl(GenericType):
     
     def reccrawl(self, node, funcin=None):
         self.getprop('visited_urls').add(node.url)
+        print 'URL: ' + node.url
         
         for l in node.links:
             new_url = None
