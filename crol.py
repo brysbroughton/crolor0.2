@@ -135,14 +135,14 @@ class CrawlReport(GenericType):
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
         
-        self.html_chunk = self.log.writerow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
+        self.html_chunk = self.log.buildrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
     
     def addreport(self, report):
         if report.type == 'page_report':
             self.page_reports.add(report)
         elif report.type == 'url_report':
             self.url_reports.add(report)
-            self.html_chunk += self.log.writerow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
+            self.html_chunk += self.log.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
     
     def finishreport(self):
         self.html_chunk = self.log.wrapchunk(self.html_chunk)
@@ -471,16 +471,21 @@ class WebLog(Log):
         self.html_chunks.add(wrapped_chunk)
         return wrapped_chunk
     
-    def writerow(self, row):
+    def buildrow(self, row):
+        """
+        Builds a string of HTML code from the given row.
+        Returns the HTML code as a string.
+        """
+        
         string_bits = []
         string_bits.append(self.row_wrapper)
-        for col in row:
-            if self.statuscolor(col) == 'BLUE': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col blue"'))
-            elif self.statuscolor(col) == 'GREEN': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col green"'))
-            elif self.statuscolor(col) == 'ORANGE': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col orange"'))
-            elif self.statuscolor(col) == 'RED': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col red"'))
-            elif self.statuscolor(col) == 'PURPLE': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col purple"'))
-            elif self.isurl(col): string_bits.append(self.col_wrapper + '<a href="'+col+'" target="_blank">')
+        # Build the first col as a colored div
+        string_bits.append(self.col_wrapper.replace('class="col"', 'class="col %s"' % self.statuscolor(row[0])))
+        string_bits.append(str(row[0]).replace('<','&lt;').replace('>','&gt;'))
+        string_bits.append(self.wrapper_after)
+        # Build the rest of the row normally
+        for col in row[1:]:
+            if self.isurl(col): string_bits.append(self.col_wrapper + '<a href="'+col+'" target="_blank">')
             else: string_bits.append(self.col_wrapper)
             string_bits.append(str(col).replace('<','&lt;').replace('>','&gt;'))
             if self.isurl(col): string_bits.append('</a>' + self.wrapper_after)
@@ -496,15 +501,15 @@ class WebLog(Log):
     
     def statuscolor(self, status):
         #1xx informational status
-        if isinstance(status, (int, long)) and str(status).startswith('1'): return 'BLUE'
+        if isinstance(status, (int, long)) and str(status).startswith('1'): return 'blue'
         #2xx success status
-        if isinstance(status, (int, long)) and str(status).startswith('2'): return 'GREEN'
+        if isinstance(status, (int, long)) and str(status).startswith('2'): return 'green'
         #3xx redirection status
-        if isinstance(status, (int, long)) and str(status).startswith('3'): return 'ORANGE'
+        if isinstance(status, (int, long)) and str(status).startswith('3'): return 'orange'
         #4xx client error status
-        if isinstance(status, (int, long)) and str(status).startswith('4'): return 'RED'
+        if isinstance(status, (int, long)) and str(status).startswith('4'): return 'red'
         #5xx client server error
-        if isinstance(status, (int, long)) and str(status).startswith('5'): return 'PURPLE'
+        if isinstance(status, (int, long)) and str(status).startswith('5'): return 'purple'
         #no http status
         else: return None
     
