@@ -119,9 +119,12 @@ class CrawlReport(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'crawl_report',
+            'log' : None,
+            'crawl' : None,
             'seed_url' : None,
-            'page_reports' : [],
-            'url_reports' : []#not sure if use
+            'page_reports' : set([]),
+            'url_reports' : set([]),
+            'html_chunk' : ''
         }
 
         super(CrawlReport, self).__init__(**kwargs)
@@ -132,6 +135,15 @@ class CrawlReport(GenericType):
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
         
+    def addreport(self, report):
+        if report.type == 'page_report':
+            self.page_reports.add(report)
+        elif report.type == 'url_report':
+            self.url_reports.add(report)
+            self.html_chunk += self.log.writerow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
+        
+    def finishreport(self):
+        self.html_chunk = self.log.wrapchunk(self.html_chunk)
 
 
 class PageReport(GenericType):
@@ -144,13 +156,17 @@ class PageReport(GenericType):
             'type' : 'page_report',
             'page_url' : None,
             'page_status' : None,
-            'url_reports' : []
+            'url_reports' : set([])
         }
         
         super(PageReport, self).__init__(**kwargs)
         
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
+        
+    def addreport(self, report):
+        if report.type == 'url_report':
+            self.url_reports.add(report)
 
 
 class UrlReport(GenericType):
@@ -162,11 +178,21 @@ class UrlReport(GenericType):
         self.props = {
             'type' : 'url_report',
             'url' : None,
-            'linked_from' : None
+            'mimetype' : None,
+            'status' : None,
+            'reason' : None,
+            'parent_url' : None
         }
         
         super(UrlReport, self).__init__(**kwargs)
         
+    def seturl(self, node):
+        self.url = node.url
+        self.mimetype = node.mimetype
+        self.status = node.status
+        self.reason = node.reason
+        if node.parent == 'HEAD': self.parent_url = node.parent
+        else: self.parent_url = node.parent.url
 
 
 class Node(GenericType):
@@ -410,14 +436,14 @@ class WebLog(Log):
             'path' : './',
             'filename' : 'webLog',
             'endfilename' : '.log.html',
+            'filePointer' : None,
             'html_before' : '<!DOCTYPE html><html>\n<head></head>\n<body>',
             'html_after' : '\n</body></html>',
-            'filePointer' : None,
-            'table_class': '\n<div class="table">',
-            'row_class': '\n\n<div class="row">',
-            'col_class': '\n<div class="col">',
-            'class_after': '</div>',
-            'tables': [],
+            'table_wrapper' : '\n<div class="table">',
+            'row_wrapper' : '\n\n<div class="row">',
+            'col_wrapper' : '\n<div class="col">',
+            'wrapper_after' : '</div>',
+            'html_chunks' : set([]),
             'default_headings' : []
         }
         GenericType.__init__(self, **kwargs)
@@ -429,37 +455,33 @@ class WebLog(Log):
         self.writefile(self.html_before)
     
     def closefile(self):
-        for t in self.tables:
-            self.writefile(t['before'] + t['content'] + t['after'])
+        for h in html_chunks:
+            self.writefile(h)
         self.writefile(self.html_after)
         self.filePointer.close
     
-    def addtable(self):
-        table = {
-            'before': self.table_class,
-            'content': '',
-            'after': self.class_after
-        }
-        self.tables.append(table)
+    def wrapchunk(self, html_chunk):
+        wrapped_chunk = self.table_wrapper + html_chunk + self.wrapper_after
+        self.html_chunks.add(wrapped_chunk)
+        return wrapped_chunk
     
-    def writerow(self, row, table):
+    def writerow(self, row):
         string_bits = []
-        string_bits.append(self.row_class)
+        string_bits.append(self.row_wrapper)
         for col in row:
-            if self.statuscolor(col) == 'BLUE': string_bits.append(self.col_class.replace('class="col"', 'class="col blue"'))
-            elif self.statuscolor(col) == 'GREEN': string_bits.append(self.col_class.replace('class="col"', 'class="col green"'))
-            elif self.statuscolor(col) == 'ORANGE': string_bits.append(self.col_class.replace('class="col"', 'class="col orange"'))
-            elif self.statuscolor(col) == 'RED': string_bits.append(self.col_class.replace('class="col"', 'class="col red"'))
-            elif self.statuscolor(col) == 'PURPLE': string_bits.append(self.col_class.replace('class="col"', 'class="col purple"'))
-            elif self.isurl(col): string_bits.append(self.col_class + '<a href="'+col+'" target="_blank">')
-            else: string_bits.append(self.col_class)
+            if self.statuscolor(col) == 'BLUE': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col blue"'))
+            elif self.statuscolor(col) == 'GREEN': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col green"'))
+            elif self.statuscolor(col) == 'ORANGE': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col orange"'))
+            elif self.statuscolor(col) == 'RED': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col red"'))
+            elif self.statuscolor(col) == 'PURPLE': string_bits.append(self.col_wrapper.replace('class="col"', 'class="col purple"'))
+            elif self.isurl(col): string_bits.append(self.col_wrapper + '<a href="'+col+'" target="_blank">')
+            else: string_bits.append(self.col_wrapper)
             string_bits.append(str(col).replace('<','&lt;').replace('>','&gt;'))
-            if self.isurl(col): string_bits.append('</a>' + self.class_after)
-            else: string_bits.append(self.class_after)
-        string_bits.append(self.class_after)
+            if self.isurl(col): string_bits.append('</a>' + self.wrapper_after)
+            else: string_bits.append(self.wrapper_after)
+        string_bits.append(self.wrapper_after)
         string_bits = map(str, string_bits)
-        table['content'] += ''.join(string_bits)
-        #self.writefile(''.join(string_bits))
+        return ''.join(string_bits)
     
     def isurl(self, string):
         string = str(string)

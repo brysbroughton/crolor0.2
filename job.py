@@ -24,17 +24,21 @@ class CrawlJob(crol.GenericType):
             'registration' : None,
             'log' : None,
             'crawl' : None,
+            'crawl_report' : None,
             'has_broken_links' : False
         }
         
         super(CrawlJob, self).__init__(**kwargs)
-
+        
         if not isinstance(self.registration, crol.Registration):
             self.setprop('registration', crol.Registration(self.registration))
-
+        
         if not isinstance(self.log, crol.WebLog):
             self.setprop('log', crol.WebLog(self.log or {}))
-
+        
+        if not isinstance(self.crawl_report, crol.CrawlReport):
+            self.setprop('crawl_report', crol.CrawlReport({'log':self.log, 'crawl':self}))
+    
     def go(self):
         self.log.filename = self.registration.department.name
         self.log.openfile()
@@ -54,18 +58,14 @@ class CrawlJob(crol.GenericType):
     def lognode(self, node):
         if str(node.status) == '404':
             self.has_broken_links = True
-        if node.parent == "HEAD":
-            self.log.addtable()
-            self.log.writerow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'], self.log.tables[0])
-            self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent], self.log.tables[0])
-        else:
-            self.log.writerow([node.status, node.reason, node.mimetype, node.url, node.parent.url], self.log.tables[0])
+        
+        self.crawl_report.addreport(crol.UrlReport().seturl(node))
     
     def logstats(self):
-        self.log.addtable()
-        self.log.writerow(['STAT NAME', 'VALUE'], self.log.tables[1])
-        self.log.writerow(['Broken URLs Found:', '999'], self.log.tables[1])
-        self.log.writerow(['Redirect URLs Found:', '999'], self.log.tables[1])
+        self.log.addchunk()
+        self.log.writerow(['STAT NAME', 'VALUE'], self.log.chunks[1])
+        self.log.writerow(['Broken URLs Found:', '999'], self.log.chunks[1])
+        self.log.writerow(['Redirect URLs Found:', '999'], self.log.chunks[1])
 
 
 ##this is how the CrawlJob is used
