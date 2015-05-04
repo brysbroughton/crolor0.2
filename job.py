@@ -44,7 +44,7 @@ class CrawlJob(crol.GenericType):
         self.log.openfile()
         self.setprop('crawl', crol.Crawl({'seed_url':self.registration.site, 'log':self.log}))
         self.crawl.start(self.lognode)#need to pass logging function here
-        self.logstats()
+        self.crawl_report.finishreport()
         self.log.closefile()
         if self.has_broken_links:
             report_location = self.log.path+self.log.filename+self.log.endfilename
@@ -54,18 +54,19 @@ class CrawlJob(crol.GenericType):
             from_address = 'web@otc.edu'
             email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
             e = crol.Email(email_props)
-            e.send()
+            #e.send()
+    
     def lognode(self, node):
         if str(node.status) == '404':
             self.has_broken_links = True
-        
-        self.crawl_report.addreport(crol.UrlReport().seturl(node))
-    
-    def logstats(self):
-        self.log.addchunk()
-        self.log.writerow(['STAT NAME', 'VALUE'], self.log.chunks[1])
-        self.log.writerow(['Broken URLs Found:', '999'], self.log.chunks[1])
-        self.log.writerow(['Redirect URLs Found:', '999'], self.log.chunks[1])
+        if self.crawl.shouldfollow(node.url):
+            page_report = crol.PageReport({'crawl_report':self.crawl_report})
+            self.crawl_report.page_reports.add(page_report)
+        else:
+            page_report = list(self.crawl_report.page_reports)[-1]
+        url_report = crol.UrlReport({'node':node, 'crawl_report':self.crawl_report, 'page_report':page_report})
+        page_report.addreport(url_report)
+        self.crawl_report.addreport(url_report)
 
 
 ##this is how the CrawlJob is used

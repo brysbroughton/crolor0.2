@@ -135,13 +135,15 @@ class CrawlReport(GenericType):
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
         
+        self.html_chunk = self.log.writerow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
+    
     def addreport(self, report):
         if report.type == 'page_report':
             self.page_reports.add(report)
         elif report.type == 'url_report':
             self.url_reports.add(report)
             self.html_chunk += self.log.writerow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
-        
+    
     def finishreport(self):
         self.html_chunk = self.log.wrapchunk(self.html_chunk)
 
@@ -156,6 +158,7 @@ class PageReport(GenericType):
             'type' : 'page_report',
             'page_url' : None,
             'page_status' : None,
+            'crawl_report' : None,
             'url_reports' : set([])
         }
         
@@ -163,7 +166,7 @@ class PageReport(GenericType):
         
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
-        
+    
     def addreport(self, report):
         if report.type == 'url_report':
             self.url_reports.add(report)
@@ -177,22 +180,25 @@ class UrlReport(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'url_report',
+            'node' : None,
             'url' : None,
             'mimetype' : None,
             'status' : None,
             'reason' : None,
-            'parent_url' : None
+            'parent_url' : None,
+            'crawl_report' : None,
+            'page_report' : None
         }
         
         super(UrlReport, self).__init__(**kwargs)
         
-    def seturl(self, node):
-        self.url = node.url
-        self.mimetype = node.mimetype
-        self.status = node.status
-        self.reason = node.reason
-        if node.parent == 'HEAD': self.parent_url = node.parent
-        else: self.parent_url = node.parent.url
+        if self.props['node']:
+            self.url = self.node.url
+            self.mimetype = self.node.mimetype
+            self.status = self.node.status
+            self.reason = self.node.reason
+            if self.node.parent == 'HEAD': self.parent_url = self.node.parent
+            else: self.parent_url = self.node.parent.url
 
 
 class Node(GenericType):
@@ -455,7 +461,7 @@ class WebLog(Log):
         self.writefile(self.html_before)
     
     def closefile(self):
-        for h in html_chunks:
+        for h in self.html_chunks:
             self.writefile(h)
         self.writefile(self.html_after)
         self.filePointer.close
