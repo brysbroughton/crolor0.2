@@ -183,6 +183,7 @@ class Node(GenericType):
             'status' : None,
             'reason' : None,
             'urlparse' : None,
+            'headers' : None,
             'mimetype' : None,
             'status' : None,
             'reason' : None,
@@ -264,6 +265,7 @@ class Node(GenericType):
         self.setprop('response', response)
         self.setprop('status', response.status)
         self.setprop('reason', response.reason)
+        self.setprop('headers', response.getheaders())
         #check for text/html mime type to scrape html
         url_info = urllib.urlopen(self.url).info()
         self.setprop('mimetype', url_info.type)
@@ -275,9 +277,19 @@ class Node(GenericType):
         """
         Use beautiful soup to get all the links off of the page.
         Return scraped links in set form.
+        
+        If the header includes a redirect, the location will be added to the nodes links,
+        the same as a link in the response body. A correctly configured server will return
+        the same link in the body as in the header redirect.
         """
         
         links = set()
+        
+        #check headers for redirects
+        redirects = filter(lambda x: x[0] == 'location', self.headers)
+        links.update(set([x[1] for x in redirects]))
+        
+        #scrape response body
         soup = bs(html)
         metalinks = soup.findAll('meta', attrs={'http-equiv':True})
         for m in metalinks:
