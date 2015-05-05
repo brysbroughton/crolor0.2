@@ -66,13 +66,17 @@ class Registration(GenericType):
             'type' : 'registration',
             'department' : None,
             'site' : None,
+            'log' : None,
             'actions' : []
         }
         
         super(Registration, self).__init__(**kwargs)
         
         if self.props['department']:
-            setattr(self, 'department', Department(self.props['department']))
+            self.setprop('department', Department(self.props['department']))
+            
+        if self.props['log']:
+            self.setprop('log', WebLog(self.props[log]))
 
 
 class Department(GenericType):
@@ -111,6 +115,7 @@ class Registry(GenericType):
         if self.props['registrations']:
             setattr(self, 'registrations', [Registration(r) for r in self.props['registrations']])
 
+
 class CrawlReport(GenericType):
     """
     Object instatiated 1-1 with a crawl job.
@@ -126,7 +131,7 @@ class CrawlReport(GenericType):
             'url_reports' : set([]),
             'html_chunk' : ''
         }
-
+        
         super(CrawlReport, self).__init__(**kwargs)
         
         if self.props['page_reports']:
@@ -211,6 +216,8 @@ class Node(GenericType):
             'type' : 'node',
             'url' : None,
             'urlparse' : None,
+            'response' : None,
+            'headers' : None,
             'mimetype' : None,
             'status' : None,
             'reason' : None,
@@ -224,9 +231,13 @@ class Node(GenericType):
         if not self.url:
             raise Exception("Node object must be created with a url")
         
-        self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
+        self.setprop('url', self.normalize(self.getprop('url')))
+        print self.url #to show progess in console
         self.setprop('urlparse', urlparse(self.getprop('url')))
-        self.request()
+        if self.urlparse.scheme in ['http', 'https']:
+            self.request()
+        elif self.urlparse.scheme == 'mailto':
+            self.checkemail()
     
     def normalize(self, link):
         """
@@ -237,7 +248,9 @@ class Node(GenericType):
         """
         
         new_parsed = urlparse(link.replace('\n', ''))
-        #check and throw exception for mailto, javascript
+        #check and throw exception for ftp, mailto, javascript
+        if new_parsed.scheme == 'ftp':
+            raise IOError('Could not normalize ftp.')
         if new_parsed.scheme == 'mailto':
             raise IOError('Could not normalize mailto.')
         if new_parsed.scheme == 'javascript':
@@ -278,14 +291,24 @@ class Node(GenericType):
         """
         
         #connect and collect node.url info
-        conn = httplib.HTTPConnection(self.urlparse.netloc)
+        if self.urlparse.scheme == 'http':
+            conn = httplib.HTTPConnection(self.urlparse.netloc)
+        elif self.urlparse.scheme == 'https':
+            conn = httplib.HTTPSConnection(self.urlparse.netloc)
+        else:
+            raise Exception("Node attempted to request unsupported protocol: "+self.url)
+        
+        #get response from HTTPConnnection and set props
         conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
+        self.setprop('response', response)
         self.setprop('status', response.status)
         self.setprop('reason', response.reason)
+        self.setprop('headers', response.getheaders())
+        
         #check for text/html mime type to scrape html
-        content_type = response.getheader('content-type')
-        if ';' in str(content_type): content_type = response.getheader('content-type').split(';')[0]
+        content_type = self.getprop('response').getheader('content-type')
+        if ';' in str(content_type): content_type = content_type.split(';')[0]
         self.setprop('mimetype', content_type)
         if self.getprop('mimetype') == 'text/html':
             html_response = response.read()
@@ -295,10 +318,28 @@ class Node(GenericType):
         """
         Use beautiful soup to get all the links off of the page.
         Return scraped links in set form.
+        
+        If the header includes a redirect, the location will be added to the nodes links,
+        the same as a link in the response body. A correctly configured server will return
+        the same link in the body as in the header redirect.
         """
         
         links = set()
+        
+        #check headers for redirects
+        redirects = filter(lambda x: x[0] == 'location', self.headers)
+        links.update(set([x[1] for x in redirects]))
+        
+        #scrape response body
         soup = bs(html)
+        metalinks = soup.findAll('meta', attrs={'http-equiv':True})
+        for m in metalinks:
+            index = str(m).find('url=')
+            end = str(m).find('"',index, len(str(m)))
+            if index != -1:
+                link = str(m)[index+4:end]
+                links.add(link)
+        
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
             
         for a in attrs:
@@ -307,6 +348,15 @@ class Node(GenericType):
             ))
         
         return links
+    
+    def checkemail(self):
+        """
+        Called on node that contains an email link.
+        Evaluates the link for correctness and sets internal properties accordingly
+        """
+        valid = re.match('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,4}$', self.urlparse.path)
+        self.setprop('status', '200' if valid else '404')
+        self.setprop('reason', 'Address correctly formatted' if valid else 'invalid email address')
 
 
 class Crawl(GenericType):
@@ -342,7 +392,7 @@ class Crawl(GenericType):
             try:
                 new_url = node.normalize(l)
             except IOError as error:
-                print 'Could not normalize url: ', new_url#error
+                print 'Could not normalize url: ', l#error
             if new_url and new_url not in self.getprop('visited_urls'):
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
@@ -356,21 +406,18 @@ class Crawl(GenericType):
     def shouldfollow(self, url):
         """
         Take node object, return boolean
-        """
-        #extend to evalute following
         #don't crawl the same url 2x
         #only crawl urls within a subsite of the input seed
+        """
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
-            if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
-                return True
-            else:
-                return False
+            if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path: return True
+            else: return False
         else:
             return False
 
-            
+
 class Log(GenericType):
     """
     Generic text log handling for crawl job
@@ -430,9 +477,7 @@ class Log(GenericType):
         string_bits.append(self.row_after)
         string_bits = map(str, string_bits)
         self.writefile(''.join(string_bits))
-    
-    
-    
+
 
 class WebLog(Log):
     """
@@ -558,38 +603,3 @@ class CsvLog(Log):
         else:
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
-
-class Email(GenericType):
-    def __init__(self, kwargs={}):
-        self.props = {
-        'type' : 'email',
-        'msg_body' : '',
-        'subject' : '',
-        'from_address' : "",
-        'to_address' : "",
-        'smtp_server' : 'smtp.otc.edu',
-        'mime_type' : "html"
-        }
-        super(Email, self).__init__(**kwargs)
-    def send(self):
-        if self.props['to_address'] == "":
-            raise Exception('to_address must be set in class: Email')
-        elif self.props['from_address'] == "":
-            raise Exception('from_address must be set in class: Email')
-        else:
-            #composing message using MIMEText
-            msg = MIMEMultipart()
-            msg['Subject'] = self.subject
-            msg['From'] = self.from_address
-            msg['to'] = self.to_address
-            if self.props['mime_type'] == "plain":
-                message = MIMEText(self.msg_body, 'plain')
-                msg.attach(message)
-            else:
-                message = MIMEText(self.msg_body, 'html')
-                msg.attach(message)
-            
-            #Email transmission with smtplib and OTC servers
-            s = smtplib.SMTP(self.smtp_server)
-            s.sendmail(self.from_address, self.to_address, msg.as_string())
-            s.quit()

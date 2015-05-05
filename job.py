@@ -1,4 +1,4 @@
-import crol
+import crol, actions
 from otcregistry import registry_data as rd
 
 rg = crol.Registry(rd)
@@ -35,6 +35,7 @@ class CrawlJob(crol.GenericType):
         
         if not isinstance(self.log, crol.WebLog):
             self.setprop('log', crol.WebLog(self.log or {}))
+            self.registration.setprop('log', self.log)
         
         if not isinstance(self.crawl_report, crol.CrawlReport):
             self.setprop('crawl_report', crol.CrawlReport({'log':self.log, 'crawl':self}))
@@ -47,14 +48,15 @@ class CrawlJob(crol.GenericType):
         self.crawl_report.finishreport()
         self.log.closefile()
         if self.has_broken_links:
+            self.applyactions()
             report_location = self.log.path+self.log.filename+self.log.endfilename
             msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
             subject = 'Crawl Completed'
             to_address = self.registration.department.main_email
             from_address = 'web@otc.edu'
             email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
-            e = crol.Email(email_props)
-            e.send()
+            #e = crol.Email(email_props)
+            #e.send()
     
     def lognode(self, node):
         if str(node.status) == '404':
@@ -67,10 +69,12 @@ class CrawlJob(crol.GenericType):
         url_report = crol.UrlReport({'node':node, 'crawl_report':self.crawl_report, 'page_report':page_report})
         page_report.addreport(url_report)
         self.crawl_report.addreport(url_report)
-
+    
+    def applyactions(self):
+        for a in self.registration.actions:
+            actions.apply(a, self.registration)
 
 ##this is how the CrawlJob is used
 #cj = CrawlJob({'registration':rg.registrations[0]})
 #cj.go()
-
 
