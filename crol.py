@@ -180,8 +180,6 @@ class Node(GenericType):
             'type' : 'node',
             'url' : None,
             'response' : None,#replace by response object from httplib
-            'status' : None,
-            'reason' : None,
             'urlparse' : None,
             'headers' : None,
             'mimetype' : None,
@@ -198,7 +196,6 @@ class Node(GenericType):
             raise Exception("Node object must be created with a url")
         
         self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
-        print self.url #to show progess in console
         self.setprop('urlparse', urlparse(self.getprop('url')))
         if self.urlparse.scheme in ['http', 'https']:
             self.request()
@@ -213,8 +210,12 @@ class Node(GenericType):
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
         
-        new_parsed = urlparse(link.replace('\n', ''))
-        #check and throw exception for mailto
+        if link is None or len(link) == 0:
+            return ''
+            
+        link = link.strip()#remove whitespace from ends
+        
+        new_parsed = urlparse(link)
         if new_parsed.scheme == 'mailto':
             return ':'.join(['mailto', new_parsed.path])
         #relative paths are tricky
@@ -267,11 +268,11 @@ class Node(GenericType):
         self.setprop('reason', response.reason)
         self.setprop('headers', response.getheaders())
         #check for text/html mime type to scrape html
-        url_info = urllib.urlopen(self.url).info()
-        self.setprop('mimetype', url_info.type)
-        if self.getprop('mimetype') == 'text/html':
+        self.setprop('mimetype', response.getheader('content-type'))
+        if self.mimetype is not None and 'text/html' in self.mimetype:
             html_response = response.read()
             self.setprop('links', self.scrape(html_response))
+        print self.status, self.url #to show progess in console
     
     def scrape(self, html):
         """
@@ -371,8 +372,6 @@ class Crawl(GenericType):
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
-            print url.path[:len(seed.path)]
-            print seed.path
             if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
                 return True
             else:
