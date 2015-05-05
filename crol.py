@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
 from datetime import datetime
-import re, os, sys, httplib, urllib
+import re, os, sys, httplib
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
@@ -237,9 +237,11 @@ class Node(GenericType):
         """
         
         new_parsed = urlparse(link.replace('\n', ''))
-        #check and throw exception for mailto
+        #check and throw exception for mailto, javascript
         if new_parsed.scheme == 'mailto':
             raise IOError('Could not normalize mailto.')
+        if new_parsed.scheme == 'javascript':
+            raise IOError('Could not normalize javascript.')
         #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
@@ -282,8 +284,9 @@ class Node(GenericType):
         self.setprop('status', response.status)
         self.setprop('reason', response.reason)
         #check for text/html mime type to scrape html
-        url_info = urllib.urlopen(self.url).info()
-        self.setprop('mimetype', url_info.type)
+        content_type = response.getheader('content-type')
+        if ';' in str(content_type): content_type = response.getheader('content-type').split(';')[0]
+        self.setprop('mimetype', content_type)
         if self.getprop('mimetype') == 'text/html':
             html_response = response.read()
             self.setprop('links', self.scrape(html_response))
@@ -333,7 +336,6 @@ class Crawl(GenericType):
     
     def reccrawl(self, node, funcin=None):
         self.getprop('visited_urls').add(node.url)
-        print 'URL: ' + node.url
         
         for l in node.links:
             new_url = None
