@@ -4,14 +4,16 @@ from otcregistry import registry_data as rd
 rg = crol.Registry(rd)
 
 class Job:
-
+    """
+    Class description.
+    """
+    
     visited_urls = set([])
     
     def __init__(self):
         pass
-        
-    
-    
+
+
 class CrawlJob(crol.GenericType):
     """
     CrawlJob must be instantiated with valid registration object,

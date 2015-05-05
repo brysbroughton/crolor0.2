@@ -406,10 +406,10 @@ class Crawl(GenericType):
     
     def shouldfollow(self, url):
         """
-        Take node object, return boolean
-        #don't crawl the same url 2x
-        #only crawl urls within a subsite of the input seed
+        Checks if given url should be crawled.
+        Returns boolean.
         """
+        
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
