@@ -4,7 +4,7 @@ registry_data = {
         {
             'site' : 'https://www.otc.edu/FORMS/webtesting/emptyLink/index.php',
             'department' : {
-                'name' : 'crol testing',
+                'name' : 'Crol Testing',
                 'main_email' : 'broughtb@otc.edu',
                 'email_group' : ['broughtb@otc.edu']
             },
@@ -32,4 +32,3 @@ registry_data = {
 }
 
 registrations = registry_data['registrations']
-

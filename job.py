@@ -55,8 +55,8 @@ class CrawlJob(crol.GenericType):
             to_address = self.registration.department.main_email
             from_address = 'web@otc.edu'
             email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
-            #e = crol.Email(email_props)
-            #e.send()
+            e = crol.Email(email_props)
+            e.send()
     
     def lognode(self, node):
         if str(node.status) == '404':
