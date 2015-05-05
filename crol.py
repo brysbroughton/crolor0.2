@@ -6,6 +6,8 @@ import smtplib
 import email,email.encoders,email.mime.base
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from openpyxl import Workbook
+from openpyxl.cell import get_column_letter
 
 class GenericType(object):
     """
@@ -529,6 +531,78 @@ class CsvLog(Log):
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
 
+class ExcelLog(Log):
+    def __init__(self, kwargs={}):
+        self.props = {
+            'type' : 'excelLog',
+            'path' : './',
+            'filename' : 'excelLog',
+            'endfilename' : '.xlsx',
+            'head_text' : 'header\n',
+            'foot_text' : 'footer',
+            'filePointer' : None,
+            "row_before" : '',
+            "row_after" : '',
+            "col_before" : '',
+            "col_after" : '',
+            "heading_row" : [],
+            "row_trim" : "none",
+            "workbook" : None,
+            "worksheet" : None,
+            "numrows" : 1
+        }
+        GenericType.__init__(self, **kwargs)
+    
+    def openfile(self):
+        wb = Workbook()
+        ws = wb.active
+        self.workbook = wb
+        self.worksheet = ws
+        self.headingrow()
+        
+    def writefile(self):
+        wb = self.workbook
+        ws = self.worksheet
+    
+    def closefile(self):
+        self.workbook.save(self.path+self.filename + self.endfilename)
+    
+    def writerow(self, vals):
+        ws = self.workbook.active
+        this_row = self.numrows
+        this_col = 1
+        for v in vals:
+            cell = ws.cell(row = this_row, column = this_col)
+            cell.value = v
+            if ws.column_dimensions[get_column_letter(this_col)] < len(str(v)):
+                ws.column_dimensions[get_column_letter(this_col)] = len(str(v))
+            this_col += 1
+        self.numrows += 1
+        self.worksheet = ws
+        
+    def headingrow(self, headings=None):
+        ws = self.workbook.active
+        if headings:
+            this_col = 1
+            this_row = self.numrows
+            for header in  headings:
+                cell = ws.cell(row = this_row, column = this_col)
+                cell.value = header
+                if ws.column_dimensions[get_column_letter(this_col)] < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)] = len(str(header))
+                this_col += 1
+        else:
+            this_col = 1
+            this_row = self.numrows
+            for header in  self.heading_row:
+                cell = ws.cell(row = this_row, column = this_col)
+                cell.value = header
+                if ws.column_dimensions[get_column_letter(this_col)] < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)] = len(str(header))
+                this_col += 1
+        self.numrows += 1
+        self.worksheet = ws
+        
 class Email(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
@@ -579,3 +653,13 @@ class Email(GenericType):
             s = smtplib.SMTP(self.smtp_server)
             s.sendmail(self.from_address, addresses, msg.as_string())
             s.quit()
+
+def test():
+    e=excelLog({'heading_row':["Column 1", "Column 2", "Column 3","Column 4"], 'row_trim':'right', 'filename':'crol','endfilename':'.xlsx','row_before':'#','row_after':'\n','col_before':'','col_after':','})
+    e.openfile()
+    e.writerow(["Much Longer item than the rest of these items", "another", "still more", "last one"])
+    e.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
+    e.writerow(["Line3", "Third Row ", "Row 3", "longest one in the third row"])
+    e.writerow(['one value'])
+    e.closefile()
+
