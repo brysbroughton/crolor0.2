@@ -8,7 +8,7 @@ registry_data = {
                 'main_email' : 'broughtb@otc.edu',
                 'email_group' : ['broughtb@otc.edu']
             },
-            'actions': ['asana']
+            'actions': []
         },
         {
             'site' : 'http://www.otc.edu/webservices',
@@ -17,7 +17,7 @@ registry_data = {
                 'main_email' : 'wrighta@otc.edu',
                 'email_group' : ['broughtb@otc.edu','lamelzag@otc.edu']
             },
-            'actions' : ['asana']
+            'actions' : []
         },
         #{
         #    'site' : 'http://www.otc.edu/news/',
