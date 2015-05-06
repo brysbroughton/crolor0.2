@@ -8,6 +8,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from openpyxl import Workbook
 from openpyxl.cell import get_column_letter
+from email.MIMEBase import MIMEBase
+from email import Encoders
 
 class GenericType(object):
     """
@@ -643,13 +645,13 @@ class Email(GenericType):
                 msg.attach(message)
 
             for f in self.files:
-                fp = open(f, 'rb')
-                # now attach the file
-                fileMsg = email.mime.base.MIMEBase('application','html')
-                fileMsg.set_payload(file(f).read())
+                fileMsg = email.mime.base.MIMEBase('application','octet-stream')
+                fileMsg.set_payload(open(f, 'rb').read())
                 email.encoders.encode_base64(fileMsg)
                 fileMsg.add_header('Content-Disposition','attachment;filename=%s' % self.filename)
                 msg.attach(fileMsg)
+            
+            
             
             #Email transmission with smtplib and OTC servers
             s = smtplib.SMTP(self.smtp_server)
