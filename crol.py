@@ -220,7 +220,7 @@ class Node(GenericType):
             'mimetype' : None,
             'status' : None,
             'reason' : None,
-            'links' : set([]),
+            'links' : [],
             'parent': None,#'HEAD'
             'children' : set([])
         }
@@ -244,6 +244,7 @@ class Node(GenericType):
         Use urlparse to get the pieces of the link.
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
+        print "Normalize: ", link
         
         if link is None or len(link) == 0:
             return ''
@@ -324,11 +325,11 @@ class Node(GenericType):
         the same link in the body as in the header redirect.
         """
         
-        links = set()
+        links = []
         
         #check headers for redirects
         redirects = filter(lambda x: x[0] == 'location', self.headers)
-        links.update(set([x[1] for x in redirects]))
+        links.extend([x[1] for x in redirects])
         
         #scrape response body
         soup = bs(html)
@@ -338,14 +339,14 @@ class Node(GenericType):
             end = str(m).find('"',index, len(str(m)))
             if index != -1:
                 link = str(m)[index+4:end]
-                links.add(link)
+                links.append(link)
         
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
             
         for a in attrs:
-            links.update(set(
+            links.extend(
                 map(lambda x: x[a], soup.findAll(**{a:True}))# **{} unzips dictionary to a=True
-            ))
+            )
         
         return links
     
