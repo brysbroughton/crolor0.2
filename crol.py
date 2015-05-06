@@ -125,8 +125,8 @@ class CrawlReport(GenericType):
             'log' : None,
             'crawl' : None,
             'seed_url' : None,
-            'page_reports' : set([]),
-            'url_reports' : set([]),
+            'page_reports' : [],
+            'url_reports' : [],
             'html_chunk' : ''
         }
         
@@ -144,7 +144,7 @@ class CrawlReport(GenericType):
         if report.type == 'page_report':
             self.page_reports.add(report)
         elif report.type == 'url_report':
-            self.url_reports.add(report)
+            self.url_reports.append(report)
             self.html_chunk += self.log.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
     
     def finishreport(self):
@@ -162,7 +162,7 @@ class PageReport(GenericType):
             'page_url' : None,
             'page_status' : None,
             'crawl_report' : None,
-            'url_reports' : set([])
+            'url_reports' : []
         }
         
         super(PageReport, self).__init__(**kwargs)
@@ -172,7 +172,7 @@ class PageReport(GenericType):
     
     def addreport(self, report):
         if report.type == 'url_report':
-            self.url_reports.add(report)
+            self.url_reports.append(report)
 
 
 class UrlReport(GenericType):
@@ -222,13 +222,14 @@ class Node(GenericType):
             'reason' : None,
             'links' : [],
             'parent': None,#'HEAD'
-            'children' : set([])
+            'children' : []
         }
         
         super(Node, self).__init__(**kwargs)
         
-        if not self.url:
-            raise Exception("Node object must be created with a url")
+        #if not self.url:
+        #    raise Exception("Node object must be created with a url")
+        print 'link:', self.url #to show progess in console
         
         self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
         self.setprop('urlparse', urlparse(self.getprop('url')))
@@ -244,7 +245,6 @@ class Node(GenericType):
         Use urlparse to get the pieces of the link.
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
-        print "Normalize: ", link
         
         if link is None or len(link) == 0:
             return ''
@@ -313,7 +313,6 @@ class Node(GenericType):
             if str(self.status) != '404':
                 html_response = response.read()
                 self.setprop('links', self.scrape(html_response))
-        print self.status, self.url #to show progess in console
     
     def scrape(self, html):
         """
@@ -397,12 +396,16 @@ class Crawl(GenericType):
             if new_url and new_url not in self.visited_urls:
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
-                node.children.add(new_node)
+                node.children.append(new_node)
                 if funcin: funcin(new_node)
                 if self.shouldfollow(new_url):
                     self.reccrawl(new_node, funcin)
                 else:
                     self.visited_urls.add(new_url)
+            else:
+                new_node = Node({'url':'', 'status':'404', 'reason':'Empty link'})
+                new_node.setprop('parent', node)
+                node.children.append(new_node)
     
     def shouldfollow(self, url):
         """
@@ -500,7 +503,7 @@ class WebLog(Log):
             'row_wrapper' : '\n\n<div class="row">',
             'col_wrapper' : '\n<div class="col">',
             'wrapper_after' : '</div>',
-            'html_chunks' : set([]),
+            'html_chunks' : [],
             'default_headings' : []
         }
         GenericType.__init__(self, **kwargs)
@@ -519,7 +522,7 @@ class WebLog(Log):
     
     def wrapchunk(self, html_chunk):
         wrapped_chunk = self.table_wrapper + html_chunk + self.wrapper_after
-        self.html_chunks.add(wrapped_chunk)
+        self.html_chunks.append(wrapped_chunk)
         return wrapped_chunk
     
     def buildrow(self, row):

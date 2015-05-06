@@ -57,7 +57,7 @@ class CrawlJob(crol.GenericType):
             self.has_broken_links = True
         if self.crawl.shouldfollow(node.url):
             page_report = crol.PageReport({'crawl_report':self.crawl_report})
-            self.crawl_report.page_reports.add(page_report)
+            self.crawl_report.page_reports.append(page_report)
         else:
             page_report = list(self.crawl_report.page_reports)[-1]
         url_report = crol.UrlReport({'node':node, 'crawl_report':self.crawl_report, 'page_report':page_report})
