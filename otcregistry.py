@@ -2,7 +2,7 @@
 registry_data = {
     'registrations' : [
         {
-            'site' : 'https://www.otc.edu/FORMS/webtesting/emptyLink/index.php',
+            'site' : 'https://www.otc.edu/FORMS/webtesting/emptyLink/',
             'department' : {
                 'name' : 'Crol Testing',
                 'main_email' : 'broughtb@otc.edu',

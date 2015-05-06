@@ -253,9 +253,8 @@ class Node(GenericType):
         new_parsed = urlparse(link)
 
         if new_parsed.scheme == 'mailto':
-            raise IOError('Could not normalize mailto.')
-        if new_parsed.scheme == 'javascript':
-            raise IOError('Could not normalize javascript.')
+            return link
+
         #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
@@ -310,8 +309,9 @@ class Node(GenericType):
         #check for text/html mime type to scrape html
         self.setprop('mimetype', response.getheader('content-type'))
         if self.mimetype is not None and 'text/html' in self.mimetype:
-            html_response = response.read()
-            self.setprop('links', self.scrape(html_response))
+            if str(self.status) != '404':
+                html_response = response.read()
+                self.setprop('links', self.scrape(html_response))
         print self.status, self.url #to show progess in console
     
     def scrape(self, html):
@@ -385,7 +385,7 @@ class Crawl(GenericType):
         self.reccrawl(head, funcin)
     
     def reccrawl(self, node, funcin=None):
-        self.getprop('visited_urls').add(node.url)
+        self.visited_urls.add(node.url)
         
         for l in node.links:
             new_url = None
@@ -393,7 +393,7 @@ class Crawl(GenericType):
                 new_url = node.normalize(l)
             except IOError as error:
                 print 'Could not normalize url: ', l#error
-            if new_url and new_url not in self.getprop('visited_urls'):
+            if new_url and new_url not in self.visited_urls:
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
                 node.children.add(new_node)
@@ -401,7 +401,7 @@ class Crawl(GenericType):
                 if self.shouldfollow(new_url):
                     self.reccrawl(new_node, funcin)
                 else:
-                    self.getprop('visited_urls').add(new_url)
+                    self.visited_urls.add(new_url)
     
     def shouldfollow(self, url):
         """
