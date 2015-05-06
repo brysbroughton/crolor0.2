@@ -51,14 +51,7 @@ class CrawlJob(crol.GenericType):
         self.log.closefile()
         if self.has_broken_links:
             self.applyactions()
-            report_location = self.log.path+self.log.filename+self.log.endfilename
-            msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
-            subject = 'Crawl Completed'
-            to_address = self.registration.department.main_email
-            from_address = 'web@otc.edu'
-            email_props = {'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
-            e = crol.Email(email_props)
-            e.send()
+            self.sendemail()
     
     def lognode(self, node):
         if str(node.status) == '404':
@@ -76,6 +69,21 @@ class CrawlJob(crol.GenericType):
         for a in self.registration.actions:
             actions.apply(a, self.registration)
 
+    def sendemail(self):
+        report_location = self.log.path+self.log.filename+self.log.endfilename
+        msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
+        subject = 'Crawl Completed'
+        to_address = self.registration.department.main_email
+        cc_address = ''
+        files = [report_location]
+        #files = [self.log.path+"Test.txt"]
+        from_address = 'web@otc.edu'
+        #file_name = "Test.txt"
+        file_name = self.log.filename + self.log.endfilename
+        email_props = {'files':files, 'filename':file_name, 'cc_address':cc_address, 'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
+        e = crol.Email(email_props)
+        e.send()
+        
 ##this is how the CrawlJob is used
 #cj = CrawlJob({'registration':rg.registrations[0]})
 #cj.go()

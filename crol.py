@@ -6,6 +6,8 @@ import re, os, sys, httplib, smtplib
 import email, email.encoders, email.mime.base
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from openpyxl import Workbook
+from openpyxl.cell import get_column_letter
 
 class GenericType(object):
     """
@@ -605,6 +607,77 @@ class CsvLog(Log):
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
 
+class ExcelLog(Log):
+    def __init__(self, kwargs={}):
+        self.props = {
+            'type' : 'excelLog',
+            'path' : './',
+            'filename' : 'excelLog',
+            'endfilename' : '.xlsx',
+            'head_text' : 'header\n',
+            'foot_text' : 'footer',
+            'filePointer' : None,
+            "row_before" : '',
+            "row_after" : '',
+            "col_before" : '',
+            "col_after" : '',
+            "heading_row" : [],
+            "row_trim" : "none",
+            "workbook" : None,
+            "worksheet" : None,
+            "numrows" : 1
+        }
+        GenericType.__init__(self, **kwargs)
+    
+    def openfile(self):
+        wb = Workbook()
+        ws = wb.active
+        self.workbook = wb
+        self.worksheet = ws
+        self.headingrow()
+        
+    def writefile(self):
+        wb = self.workbook
+        ws = self.worksheet
+    
+    def closefile(self):
+        self.workbook.save(self.path+self.filename + self.endfilename)
+    
+    def writerow(self, vals):
+        ws = self.workbook.active
+        this_row = self.numrows
+        this_col = 1
+        for v in vals:
+            cell = ws.cell(row = this_row, column = this_col)
+            cell.value = v
+            if ws.column_dimensions[get_column_letter(this_col)].width < len(str(v)):
+                ws.column_dimensions[get_column_letter(this_col)].width = len(str(v))
+            this_col += 1
+        self.numrows += 1
+        self.worksheet = ws
+        
+    def headingrow(self, headings=None):
+        ws = self.workbook.active
+        if headings:
+            this_col = 1
+            this_row = self.numrows
+            for header in  headings:
+                cell = ws.cell(row = this_row, column = this_col)
+                cell.value = header
+                if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header))
+                this_col += 1
+        else:
+            this_col = 1
+            this_row = self.numrows
+            for header in  self.heading_row:
+                cell = ws.cell(row = this_row, column = this_col)
+                cell.value = header
+                if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header))
+                this_col += 1
+        self.numrows += 1
+        self.worksheet = ws
 
 class Email(GenericType):
     def __init__(self, kwargs={}):
@@ -646,10 +719,8 @@ class Email(GenericType):
                 message = MIMEText(self.msg_body, 'html')
                 msg.attach(message)
             for f in self.files:
-                fp = open(f, 'rb')
-                # now attach the file
-                fileMsg = email.mime.base.MIMEBase('application','html')
-                fileMsg.set_payload(file(f).read())
+                fileMsg = email.mime.base.MIMEBase('application','octet-stream')
+                fileMsg.set_payload(open(f, 'rb').read())
                 email.encoders.encode_base64(fileMsg)
                 fileMsg.add_header('Content-Disposition','attachment;filename=%s' % self.filename)
                 msg.attach(fileMsg)
