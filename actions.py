@@ -39,11 +39,9 @@ def asanapush(registration):
     the crawl. Email web if there is an issue with
     the push.
     """
-    log_filename = registration.log.filename + registration.log.endfilename
     task_details = asana.links_task_template
-    task_details['name'] = "%s :: Broken Link Report" % registration.department.name
-    r = asana.pushlogtotask(task_details, log_filename)
-    print r.status_code
+    task_details['name'] = registration.department.name + " :: Broken Link Report"
+    asana.pushlogtotask(task_details, registration.log.filename + registration.log.endfilename)
 
     
 class Email(crol.GenericType):
@@ -97,7 +95,8 @@ class Email(crol.GenericType):
             s = smtplib.SMTP(self.smtp_server)
             s.sendmail(self.from_address, addresses, msg.as_string())
             s.quit()
-    
+ 
+   
        
 actions = {
     'email' : emailnotify,
