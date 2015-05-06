@@ -574,8 +574,6 @@ class ExcelLog(Log):
         for v in vals:
             cell = ws.cell(row = this_row, column = this_col)
             cell.value = v
-            print "Column Width:"
-            print ws.column_dimensions[get_column_letter(this_col)].width
             if ws.column_dimensions[get_column_letter(this_col)].width < len(str(v)):
                 ws.column_dimensions[get_column_letter(this_col)].width = len(str(v))
             this_col += 1
@@ -590,8 +588,8 @@ class ExcelLog(Log):
             for header in  headings:
                 cell = ws.cell(row = this_row, column = this_col)
                 cell.value = header
-                if ws.column_dimensions[get_column_letter(this_col)] < len(str(header)):
-                    ws.column_dimensions[get_column_letter(this_col)] = len(str(header))
+                if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header))
                 this_col += 1
         else:
             this_col = 1
@@ -599,8 +597,8 @@ class ExcelLog(Log):
             for header in  self.heading_row:
                 cell = ws.cell(row = this_row, column = this_col)
                 cell.value = header
-                if ws.column_dimensions[get_column_letter(this_col)] < len(str(header)):
-                    ws.column_dimensions[get_column_letter(this_col)] = len(str(header))
+                if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header))
                 this_col += 1
         self.numrows += 1
         self.worksheet = ws
@@ -657,13 +655,4 @@ class Email(GenericType):
             s = smtplib.SMTP(self.smtp_server)
             s.sendmail(self.from_address, addresses, msg.as_string())
             s.quit()
-
-def test():
-    e=excelLog({'heading_row':["Column 1", "Column 2", "Column 3","Column 4"], 'row_trim':'right', 'filename':'crol','endfilename':'.xlsx','row_before':'#','row_after':'\n','col_before':'','col_after':','})
-    e.openfile()
-    e.writerow(["Much Longer item than the rest of these items", "another", "still more", "last one"])
-    e.writerow(["Line2", "A little longer than most others", "Row 2", "End of Row"])
-    e.writerow(["Line3", "Third Row ", "Row 3", "longest one in the third row"])
-    e.writerow(['one value'])
-    e.closefile()
 
