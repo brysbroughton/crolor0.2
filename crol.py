@@ -1,11 +1,13 @@
 from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
 from datetime import datetime
-import re, os, sys, httplib, smtplib
-#import email libraries
-import email, email.encoders, email.mime.base
+import re, os, sys, httplib, urllib
+import smtplib
+import email,email.encoders,email.mime.base
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
+from openpyxl import Workbook
+from openpyxl.cell import get_column_letter
 
 class GenericType(object):
     """
@@ -14,20 +16,20 @@ class GenericType(object):
     
     type: generic
     """
-    
+
     def setprop(self, key, val):
         if self.props.has_key(key):
             self.props[key] = val
             setattr(self, key, val)
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
-    
+
     def getprop(self, key):
         if self.props.has_key(key):
             return self.props[key]
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
-    
+
     def listprops(self):
         for key, val in self.props.iteritems():
             print "%s : %s" % (key, val)
@@ -67,17 +69,13 @@ class Registration(GenericType):
             'type' : 'registration',
             'department' : None,
             'site' : None,
-            'log' : None,
             'actions' : []
         }
         
         super(Registration, self).__init__(**kwargs)
         
         if self.props['department']:
-            self.setprop('department', Department(self.props['department']))
-            
-        if self.props['log']:
-            self.setprop('log', WebLog(self.props[log]))
+            setattr(self, 'department', Department(self.props['department']))
 
 
 class Department(GenericType):
@@ -116,7 +114,6 @@ class Registry(GenericType):
         if self.props['registrations']:
             setattr(self, 'registrations', [Registration(r) for r in self.props['registrations']])
 
-
 class CrawlReport(GenericType):
     """
     Object instatiated 1-1 with a crawl job.
@@ -125,14 +122,11 @@ class CrawlReport(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'crawl_report',
-            'log' : None,
-            'crawl' : None,
             'seed_url' : None,
-            'page_reports' : set([]),
-            'url_reports' : set([]),
-            'html_chunk' : ''
+            'page_reports' : [],
+            'url_reports' : []#not sure if use
         }
-        
+
         super(CrawlReport, self).__init__(**kwargs)
         
         if self.props['page_reports']:
@@ -141,17 +135,6 @@ class CrawlReport(GenericType):
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
         
-        self.html_chunk = self.log.buildrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
-    
-    def addreport(self, report):
-        if report.type == 'page_report':
-            self.page_reports.add(report)
-        elif report.type == 'url_report':
-            self.url_reports.add(report)
-            self.html_chunk += self.log.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
-    
-    def finishreport(self):
-        self.html_chunk = self.log.wrapchunk(self.html_chunk)
 
 
 class PageReport(GenericType):
@@ -164,18 +147,13 @@ class PageReport(GenericType):
             'type' : 'page_report',
             'page_url' : None,
             'page_status' : None,
-            'crawl_report' : None,
-            'url_reports' : set([])
+            'url_reports' : []
         }
         
         super(PageReport, self).__init__(**kwargs)
         
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
-    
-    def addreport(self, report):
-        if report.type == 'url_report':
-            self.url_reports.add(report)
 
 
 class UrlReport(GenericType):
@@ -186,25 +164,12 @@ class UrlReport(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'url_report',
-            'node' : None,
             'url' : None,
-            'mimetype' : None,
-            'status' : None,
-            'reason' : None,
-            'parent_url' : None,
-            'crawl_report' : None,
-            'page_report' : None
+            'linked_from' : None
         }
         
         super(UrlReport, self).__init__(**kwargs)
         
-        if self.props['node']:
-            self.url = self.node.url
-            self.mimetype = self.node.mimetype
-            self.status = self.node.status
-            self.reason = self.node.reason
-            if self.node.parent == 'HEAD': self.parent_url = self.node.parent
-            else: self.parent_url = self.node.parent.url
 
 
 class Node(GenericType):
@@ -216,8 +181,10 @@ class Node(GenericType):
         self.props = {
             'type' : 'node',
             'url' : None,
+            'response' : None,#replace by response object from httplib
+            'status' : None,
+            'reason' : None,
             'urlparse' : None,
-            'response' : None,
             'headers' : None,
             'mimetype' : None,
             'status' : None,
@@ -232,7 +199,7 @@ class Node(GenericType):
         if not self.url:
             raise Exception("Node object must be created with a url")
         
-        self.setprop('url', self.normalize(self.getprop('url')))
+        self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
         print self.url #to show progess in console
         self.setprop('urlparse', urlparse(self.getprop('url')))
         if self.urlparse.scheme in ['http', 'https']:
@@ -249,13 +216,9 @@ class Node(GenericType):
         """
         
         new_parsed = urlparse(link.replace('\n', ''))
-        #check and throw exception for ftp, mailto, javascript
-        if new_parsed.scheme == 'ftp':
-            raise IOError('Could not normalize ftp.')
+        #check and throw exception for mailto
         if new_parsed.scheme == 'mailto':
-            raise IOError('Could not normalize mailto.')
-        if new_parsed.scheme == 'javascript':
-            raise IOError('Could not normalize javascript.')
+            return ':'.join(['mailto', new_parsed.path])
         #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
@@ -298,19 +261,16 @@ class Node(GenericType):
             conn = httplib.HTTPSConnection(self.urlparse.netloc)
         else:
             raise Exception("Node attempted to request unsupported protocol: "+self.url)
-        
-        #get response from HTTPConnnection and set props
+                    
         conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
         self.setprop('response', response)
         self.setprop('status', response.status)
         self.setprop('reason', response.reason)
         self.setprop('headers', response.getheaders())
-        
         #check for text/html mime type to scrape html
-        content_type = self.getprop('response').getheader('content-type')
-        if ';' in str(content_type): content_type = content_type.split(';')[0]
-        self.setprop('mimetype', content_type)
+        url_info = urllib.urlopen(self.url).info()
+        self.setprop('mimetype', url_info.type)
         if self.getprop('mimetype') == 'text/html':
             html_response = response.read()
             self.setprop('links', self.scrape(html_response))
@@ -340,7 +300,7 @@ class Node(GenericType):
             if index != -1:
                 link = str(m)[index+4:end]
                 links.add(link)
-        
+
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
             
         for a in attrs:
@@ -349,7 +309,7 @@ class Node(GenericType):
             ))
         
         return links
-    
+        
     def checkemail(self):
         """
         Called on node that contains an email link.
@@ -393,7 +353,7 @@ class Crawl(GenericType):
             try:
                 new_url = node.normalize(l)
             except IOError as error:
-                print 'Could not normalize url: ', l#error
+                print 'Could not normalize url: ', new_url#error
             if new_url and new_url not in self.getprop('visited_urls'):
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
@@ -406,19 +366,23 @@ class Crawl(GenericType):
     
     def shouldfollow(self, url):
         """
-        Checks if given url should be crawled.
-        Returns boolean.
+        Take node object, return boolean
+        #don't crawl the same url 2x
+        #only crawl urls within a subsite of the input seed
         """
-        
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
-            if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path: return True
-            else: return False
+            print url.path[:len(seed.path)]
+            print seed.path
+            if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
+                return True
+            else:
+                return False
         else:
             return False
 
-
+            
 class Log(GenericType):
     """
     Generic text log handling for crawl job
@@ -478,7 +442,9 @@ class Log(GenericType):
         string_bits.append(self.row_after)
         string_bits = map(str, string_bits)
         self.writefile(''.join(string_bits))
-
+    
+    
+    
 
 class WebLog(Log):
     """
@@ -491,84 +457,44 @@ class WebLog(Log):
             'path' : './',
             'filename' : 'webLog',
             'endfilename' : '.log.html',
+            'head_text' : '<!DOCTYPE html><html><head></head><body><table>',
+            'foot_text' : '\n</table></body></html>',
             'filePointer' : None,
-            'html_before' : '<!DOCTYPE html><html>\n<head></head>\n<body>',
-            'html_after' : '\n</body></html>',
-            'table_wrapper' : '\n<div class="table">',
-            'row_wrapper' : '\n\n<div class="row">',
-            'col_wrapper' : '\n<div class="col">',
-            'wrapper_after' : '</div>',
-            'html_chunks' : set([]),
-            'default_headings' : []
+            "row_before" : '\n<tr>',
+            "row_after" : '\n</tr>',
+            "col_before" : '\n\t<td>',
+            "col_after" : '</td>',
+            'hrow_before' : '<tr>',
+            'hrow_after' : '</tr>',
+            'hcol_before' : '<th>',
+            'hcol_after' : '</th>',
+            "default_headings" : []
         }
         GenericType.__init__(self, **kwargs)
-        self.injectcss()
-    
-    def openfile(self):
-        f = open(self.path+self.filename+self.endfilename, 'w')
-        self.setprop('filePointer', f)
-        self.writefile(self.html_before)
-    
-    def closefile(self):
-        for h in self.html_chunks:
-            self.writefile(h)
-        self.writefile(self.html_after)
-        self.filePointer.close
-    
-    def wrapchunk(self, html_chunk):
-        wrapped_chunk = self.table_wrapper + html_chunk + self.wrapper_after
-        self.html_chunks.add(wrapped_chunk)
-        return wrapped_chunk
-    
-    def buildrow(self, row):
-        """
-        Builds a string of HTML code from the given row.
-        Returns the HTML code as a string.
-        """
-        
+
+    def headingrow(self, headings=None):
         string_bits = []
-        string_bits.append(self.row_wrapper)
-        # Build the first col as a colored div
-        string_bits.append(self.col_wrapper.replace('class="col"', 'class="col %s"' % self.statuscolor(row[0])))
-        string_bits.append(str(row[0]).replace('<','&lt;').replace('>','&gt;'))
-        string_bits.append(self.wrapper_after)
-        # Build the rest of the row normally
-        for col in row[1:]:
-            if self.isurl(col): string_bits.append(self.col_wrapper + '<a href="'+col+'" target="_blank">')
-            else: string_bits.append(self.col_wrapper)
-            string_bits.append(str(col).replace('<','&lt;').replace('>','&gt;'))
-            if self.isurl(col): string_bits.append('</a>' + self.wrapper_after)
-            else: string_bits.append(self.wrapper_after)
-        string_bits.append(self.wrapper_after)
+        if headings:
+            string_bits.append(self.hrow_before)
+            for header in  headings:
+                string_bits.append(self.hcol_before)
+                string_bits.append(header)
+                string_bits.append(self.hcol_after)
+        else:
+            string_bits.append(self.default_headings)
         string_bits = map(str, string_bits)
-        return ''.join(string_bits)
-    
-    def isurl(self, string):
-        string = str(string)
-        if string.startswith('http://') or string.startswith('https://'): return True
-        else: return False
-    
-    def statuscolor(self, status):
-        #1xx informational status
-        if isinstance(status, (int, long)) and str(status).startswith('1'): return 'blue'
-        #2xx success status
-        if isinstance(status, (int, long)) and str(status).startswith('2'): return 'green'
-        #3xx redirection status
-        if isinstance(status, (int, long)) and str(status).startswith('3'): return 'orange'
-        #4xx client error status
-        if isinstance(status, (int, long)) and str(status).startswith('4'): return 'red'
-        #5xx client server error
-        if isinstance(status, (int, long)) and str(status).startswith('5'): return 'purple'
-        #no http status
-        else: return None
-    
-    def injectcss(self):
-        try:
-            css_file = open('weblog.css', 'r')
-            css = css_file.read()
-            self.html_before = self.html_before.replace('<head></head>', '<head><style type="text/css">\n'+css+'\n</style></head>')
-        except IOError as error:
-            print 'Error opening weblog.css file.'
+        self.writefile(''.join(string_bits))
+
+    def writerow(self, row):
+        string_bits = []
+        string_bits.append(self.row_before)
+        for col in row:
+            string_bits.append(self.col_before)
+            string_bits.append(str(col).replace('<','&lt;').replace('>','&gt;'))
+            string_bits.append(self.col_after)
+        string_bits.append(self.row_after)
+        string_bits = map(str, string_bits)
+        self.writefile(''.join(string_bits))
 
 
 class CsvLog(Log):
@@ -605,7 +531,78 @@ class CsvLog(Log):
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
 
-
+class ExcelLog(Log):
+    def __init__(self, kwargs={}):
+        self.props = {
+            'type' : 'excelLog',
+            'path' : './',
+            'filename' : 'excelLog',
+            'endfilename' : '.xlsx',
+            'head_text' : 'header\n',
+            'foot_text' : 'footer',
+            'filePointer' : None,
+            "row_before" : '',
+            "row_after" : '',
+            "col_before" : '',
+            "col_after" : '',
+            "heading_row" : [],
+            "row_trim" : "none",
+            "workbook" : None,
+            "worksheet" : None,
+            "numrows" : 1
+        }
+        GenericType.__init__(self, **kwargs)
+    
+    def openfile(self):
+        wb = Workbook()
+        ws = wb.active
+        self.workbook = wb
+        self.worksheet = ws
+        self.headingrow()
+        
+    def writefile(self):
+        wb = self.workbook
+        ws = self.worksheet
+    
+    def closefile(self):
+        self.workbook.save(self.path+self.filename + self.endfilename)
+    
+    def writerow(self, vals):
+        ws = self.workbook.active
+        this_row = self.numrows
+        this_col = 1
+        for v in vals:
+            cell = ws.cell(row = this_row, column = this_col)
+            cell.value = v
+            if ws.column_dimensions[get_column_letter(this_col)].width < len(str(v)):
+                ws.column_dimensions[get_column_letter(this_col)].width = len(str(v))
+            this_col += 1
+        self.numrows += 1
+        self.worksheet = ws
+        
+    def headingrow(self, headings=None):
+        ws = self.workbook.active
+        if headings:
+            this_col = 1
+            this_row = self.numrows
+            for header in  headings:
+                cell = ws.cell(row = this_row, column = this_col)
+                cell.value = header
+                if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header))
+                this_col += 1
+        else:
+            this_col = 1
+            this_row = self.numrows
+            for header in  self.heading_row:
+                cell = ws.cell(row = this_row, column = this_col)
+                cell.value = header
+                if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header))
+                this_col += 1
+        self.numrows += 1
+        self.worksheet = ws
+        
 class Email(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
@@ -621,7 +618,6 @@ class Email(GenericType):
         'mime_type' : "html"
         }
         super(Email, self).__init__(**kwargs)
-    
     def send(self):
         has_cc = False
         addresses = [self.to_address]
@@ -645,15 +641,18 @@ class Email(GenericType):
             else:
                 message = MIMEText(self.msg_body, 'html')
                 msg.attach(message)
+
             for f in self.files:
-                fp = open(f, 'rb')
-                # now attach the file
-                fileMsg = email.mime.base.MIMEBase('application','html')
-                fileMsg.set_payload(file(f).read())
+                fileMsg = email.mime.base.MIMEBase('application','octet-stream')
+                fileMsg.set_payload(open(f, 'rb').read())
                 email.encoders.encode_base64(fileMsg)
                 fileMsg.add_header('Content-Disposition','attachment;filename=%s' % self.filename)
                 msg.attach(fileMsg)
+            
+            
+            
             #Email transmission with smtplib and OTC servers
             s = smtplib.SMTP(self.smtp_server)
             s.sendmail(self.from_address, addresses, msg.as_string())
             s.quit()
+
