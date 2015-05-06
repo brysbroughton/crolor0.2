@@ -8,8 +8,6 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from openpyxl import Workbook
 from openpyxl.cell import get_column_letter
-from email.MIMEBase import MIMEBase
-from email import Encoders
 
 class GenericType(object):
     """
