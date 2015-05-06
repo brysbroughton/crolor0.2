@@ -574,8 +574,10 @@ class ExcelLog(Log):
         for v in vals:
             cell = ws.cell(row = this_row, column = this_col)
             cell.value = v
-            if ws.column_dimensions[get_column_letter(this_col)] < len(str(v)):
-                ws.column_dimensions[get_column_letter(this_col)] = len(str(v))
+            print "Column Width:"
+            print ws.column_dimensions[get_column_letter(this_col)].width
+            if ws.column_dimensions[get_column_letter(this_col)].width < len(str(v)):
+                ws.column_dimensions[get_column_letter(this_col)].width = len(str(v))
             this_col += 1
         self.numrows += 1
         self.worksheet = ws
