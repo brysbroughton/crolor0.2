@@ -641,6 +641,7 @@ class Email(GenericType):
             else:
                 message = MIMEText(self.msg_body, 'html')
                 msg.attach(message)
+
             for f in self.files:
                 fp = open(f, 'rb')
                 # now attach the file
@@ -649,6 +650,7 @@ class Email(GenericType):
                 email.encoders.encode_base64(fileMsg)
                 fileMsg.add_header('Content-Disposition','attachment;filename=%s' % self.filename)
                 msg.attach(fileMsg)
+            
             #Email transmission with smtplib and OTC servers
             s = smtplib.SMTP(self.smtp_server)
             s.sendmail(self.from_address, addresses, msg.as_string())

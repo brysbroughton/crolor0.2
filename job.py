@@ -32,8 +32,8 @@ class CrawlJob(crol.GenericType):
         if not isinstance(self.registration, crol.Registration):
             self.setprop('registration', crol.Registration(self.registration))
 
-        if not isinstance(self.log, crol.WebLog):
-            self.setprop('log', crol.WebLog(self.log or {}))
+        if not isinstance(self.log, crol.ExcelLog):
+            self.setprop('log', crol.ExcelLog(self.log or {}))
 
     def go(self):
         self.log.filename = self.registration.department.name
@@ -59,7 +59,9 @@ class CrawlJob(crol.GenericType):
         to_address = self.registration.department.main_email
         cc_address = ''
         files = [report_location]
+        #files = [self.log.path+"Test.txt"]
         from_address = 'web@otc.edu'
+        #file_name = "Test.txt"
         file_name = self.log.filename + self.log.endfilename
         email_props = {'files':files, 'filename':file_name, 'cc_address':cc_address, 'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
         e = crol.Email(email_props)
