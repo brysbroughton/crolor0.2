@@ -1,4 +1,5 @@
 import crol
+import os, sys, smtplib
 
 
 
@@ -81,27 +82,47 @@ class WebLog(Log):
             'row_wrapper' : '\n\n<div class="row">',
             'col_wrapper' : '\n<div class="col">',
             'wrapper_after' : '</div>',
-            'html_chunks' : [],
-            'default_headings' : []
+            'html_chunks' : {
+                'url_data' : None,
+                'report_stats' : None
+            },
+            'default_headings' : [],
+            'crawl_report' : None
         }
-        GenericType.__init__(self, **kwargs)
+        crol.GenericType.__init__(self, **kwargs)
         self.injectcss()
+        
+        if self.crawl_report:
+            self.readreport(self.crawl_report)
     
     def openfile(self):
         f = open(self.path+self.filename+self.endfilename, 'w')
         self.setprop('filePointer', f)
+    
+    def readreport(self, crawl_report):
+        self.setprop('crawl_report', crawl_report)
         self.writefile(self.html_before)
+        
+        #build and write url_data from crawl_report
+        self.html_chunks['url_data'] = self.table_wrapper + self.buildrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
+        for report in self.crawl_report.url_reports:
+            self.html_chunks['url_data'] += self.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
+        self.html_chunks['url_data'] += self.wrapper_after
+        self.writefile(self.html_chunks['url_data'])
+        
+        #build and write report_stats from crawl_report
+        self.html_chunks['report_stats'] = self.table_wrapper + self.buildrow(['STATISTIC', 'VALUE'])
+        broken_count = 0
+        for report in self.crawl_report.url_reports:
+            if self.statuscolor(report.status) == 'red': broken_count += 1
+        self.html_chunks['report_stats'] += self.buildrow(['Broken urls found:', broken_count])
+        self.html_chunks['report_stats'] += self.wrapper_after
+        self.writefile(self.html_chunks['report_stats'])
+        
+        self.writefile(self.html_after)
     
     def closefile(self):
-        for h in self.html_chunks:
-            self.writefile(h)
-        self.writefile(self.html_after)
         self.filePointer.close
-    
-    def wrapchunk(self, html_chunk):
-        wrapped_chunk = self.table_wrapper + html_chunk + self.wrapper_after
-        self.html_chunks.append(wrapped_chunk)
-        return wrapped_chunk
     
     def buildrow(self, row):
         """
@@ -175,7 +196,7 @@ class CsvLog(Log):
             "heading_row" : [],
             "row_trim" : "right"
         }
-        GenericType.__init__(self, **kwargs)
+        crol.GenericType.__init__(self, **kwargs)
 
     def headingrow(self, headings=None):
         if headings:

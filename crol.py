@@ -1,7 +1,7 @@
 from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
 from datetime import datetime
-import re, os, sys, httplib, smtplib
+import re, httplib
 
 
 class GenericType(object):
@@ -124,23 +124,16 @@ class CrawlReport(GenericType):
             'type' : 'crawl_report',
             'crawl' : None,
             'seed_url' : None,
-            'page_reports' : [],
             'url_reports' : [],
         }
         
         super(CrawlReport, self).__init__(**kwargs)
         
-        if self.props['page_reports']:
-            setattr(self, 'page_reports', [PageReport(r) for r in self.props['page_reports']])
-        
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
-        
+    
     def addreport(self, report):
-        if report.type == 'page_report':
-            self.page_reports.append(report)
-        elif report.type == 'url_report':
-            self.url_reports.append(report)
+        self.url_reports.append(report)
 
 
 class UrlReport(GenericType):
@@ -155,7 +148,7 @@ class UrlReport(GenericType):
             'mimetype' : None,
             'status' : None,
             'reason' : None,
-            'parent_url' : None,
+            'parent_url' : None
         }
         
         super(UrlReport, self).__init__(**kwargs)
@@ -265,7 +258,9 @@ class Node(GenericType):
         self.setprop('headers', response.getheaders())
         
         #check for text/html mime type to scrape html
-        self.setprop('mimetype', response.getheader('content-type'))
+        content_type = response.getheader('content-type')
+        if ';' in str(content_type): content_type = content_type.split(';')[0]
+        self.setprop('mimetype', content_type)
         if self.mimetype is not None and 'text/html' in self.mimetype:
             if str(self.status) != '404':
                 html_response = response.read()
@@ -312,7 +307,7 @@ class Node(GenericType):
         Evaluates the link for correctness and sets internal properties accordingly
         """
         valid = re.match('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,4}$', self.urlparse.path)
-        self.setprop('status', '200' if valid else '404')
+        self.setprop('status', 200 if valid else 404)
         self.setprop('reason', 'Address correctly formatted' if valid else 'invalid email address')
 
 
@@ -327,6 +322,7 @@ class Crawl(GenericType):
             'seed_url' : None,
             'node_tree' : None,#'HEAD'
             'visited_urls' : set([]),
+            'crawl_report' : None,
             'log' : None,
         }
         
@@ -336,31 +332,43 @@ class Crawl(GenericType):
         """
         Begin the crawl process from url seed
         """
+        
+        self.setprop('crawl_report', CrawlReport({'crawl':self, 'seed_url':self.seed_url}))
         head = Node({'url':self.seed_url, 'parent':'HEAD'})
         self.setprop('node_tree', head)
         if funcin: funcin(head)
         self.reccrawl(head, funcin)
+        #self.setprop('log', WebLog({'crawl_report':self.crawl_report}))
     
     def reccrawl(self, node, funcin=None):
         self.visited_urls.add(node.url)
         
         for l in node.links:
             new_url = None
+            
+            #try to normalize url
             try:
                 new_url = node.normalize(l)
-            except IOError as error:
-                print 'Could not normalize url: ', l#error
-            if new_url and new_url not in self.visited_urls:
+            except IOError:
+                print 'Could not normalize url: ', l
+            
+            if new_url:
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
+                self.crawl_report.addreport(UrlReport({
+                    'url' : new_url,
+                    'mimetype' : new_node.mimetype,
+                    'status' : new_node.status,
+                    'reason' : new_node.reason,
+                    'parent_url' : new_node.parent.url
+                }))
                 node.children.append(new_node)
                 if funcin: funcin(new_node)
-                if self.shouldfollow(new_url):
-                    self.reccrawl(new_node, funcin)
-                else:
-                    self.visited_urls.add(new_url)
+                if new_url not in self.visited_urls:
+                    if self.shouldfollow(new_url): self.reccrawl(new_node, funcin)
+                    else: self.visited_urls.add(new_url)
             else:
-                new_node = Node({'url':'', 'status':'404', 'reason':'Empty link'})
+                new_node = Node({'url':'', 'status':404, 'reason':'Empty link'})
                 new_node.setprop('parent', node)
                 node.children.append(new_node)
     

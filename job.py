@@ -1,4 +1,4 @@
-import crol, actions
+import crol, logs, actions
 from otcregistry import registry_data as rd
 
 rg = crol.Registry(rd)
@@ -26,7 +26,6 @@ class CrawlJob(crol.GenericType):
             'registration' : None,
             'log' : None,
             'crawl' : None,
-            'crawl_report' : None,
             'has_broken_links' : False
         }
         
@@ -35,34 +34,23 @@ class CrawlJob(crol.GenericType):
         if not isinstance(self.registration, crol.Registration):
             self.setprop('registration', crol.Registration(self.registration))
         
-        if not isinstance(self.log, crol.WebLog):
-            self.setprop('log', crol.WebLog(self.log or {}))
+        if not isinstance(self.log, logs.WebLog):
+            self.setprop('log', logs.WebLog(self.log or {}))
             self.registration.setprop('log', self.log)
-        
-        if not isinstance(self.crawl_report, crol.CrawlReport):
-            self.setprop('crawl_report', crol.CrawlReport({'log':self.log, 'crawl':self}))
     
     def go(self):
         self.log.filename = self.registration.department.name
         self.log.openfile()
         self.setprop('crawl', crol.Crawl({'seed_url':self.registration.site, 'log':self.log}))
         self.crawl.start(self.lognode)#need to pass logging function here
-        self.crawl_report.finishreport()
+        self.log.readreport(self.crawl.crawl_report)
         self.log.closefile()
-        if self.has_broken_links:
-            self.applyactions()
+        #if self.has_broken_links:
+            #self.applyactions()
     
     def lognode(self, node):
         if str(node.status) == '404':
             self.has_broken_links = True
-        if self.crawl.shouldfollow(node.url):
-            page_report = crol.PageReport({'crawl_report':self.crawl_report})
-            self.crawl_report.page_reports.append(page_report)
-        else:
-            page_report = list(self.crawl_report.page_reports)[-1]
-        url_report = crol.UrlReport({'node':node, 'crawl_report':self.crawl_report, 'page_report':page_report})
-        page_report.addreport(url_report)
-        self.crawl_report.addreport(url_report)
     
     def applyactions(self):
         for a in self.registration.actions:
