@@ -1,4 +1,4 @@
-import crol
+import crol, asana
 import smtplib
 import email,email.encoders,email.mime.base
 from email.mime.multipart import MIMEMultipart
@@ -39,8 +39,9 @@ def asanapush(registration):
     the crawl. Email web if there is an issue with
     the push.
     """
-    print 'asana'
-    registration.listprops()
+    task_details = asana.links_task_template
+    task_details['name'] = registration.department.name + " :: Broken Link Report"
+    asana.pushlogtotask(task_details, registration.log.filename + registration.log.endfilename)
 
     
 class Email(crol.GenericType):

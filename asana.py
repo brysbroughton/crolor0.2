@@ -18,7 +18,6 @@ links_task_template = {
     'workspace' : '20613813963070' #Web Services workspace
 }
 
-
 def pushlogtotask(task_details, file_name):
     data = {'data':task_details}
     r = requests.post(asana['url'], auth=(asana['apikey'], ''), data=json.dumps(data))
