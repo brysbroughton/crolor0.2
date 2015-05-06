@@ -86,10 +86,8 @@ class Email(crol.GenericType):
                 message = MIMEText(self.msg_body, 'html')
                 msg.attach(message)
             for f in self.files:
-                fp = open(f, 'rb')
-                # now attach the file
-                fileMsg = email.mime.base.MIMEBase('application','html')
-                fileMsg.set_payload(file(f).read())
+                fileMsg = email.mime.base.MIMEBase('application','octet-stream')
+                fileMsg.set_payload(open(f, 'rb').read())
                 email.encoders.encode_base64(fileMsg)
                 fileMsg.add_header('Content-Disposition','attachment;filename=%s' % self.filename)
                 msg.attach(fileMsg)

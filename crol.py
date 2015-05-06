@@ -8,6 +8,8 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from openpyxl import Workbook
 from openpyxl.cell import get_column_letter
+from openpyxl.styles import Color, PatternFill, Font, Border
+from openpyxl.formatting import ColorScaleRule, CellIsRule, FormulaRule
 
 class GenericType(object):
     """
@@ -634,7 +636,8 @@ class ExcelLog(Log):
         ws = wb.active
         self.workbook = wb
         self.worksheet = ws
-        self.headingrow()
+        self.headingrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
+
         
     def writefile(self):
         wb = self.workbook
@@ -647,11 +650,30 @@ class ExcelLog(Log):
         ws = self.workbook.active
         this_row = self.numrows
         this_col = 1
+        #code_color = None
+        code_color = PatternFill(start_color='00FFCC00', fill_type='solid')
+        print "CODE: "
+        print str(vals)[1]
+        index = 1
+        if str(vals)[1] == "'":
+            index = 2
+        if str(vals)[index] == '1':
+            code_color = PatternFill(start_color='004472B9', end_color='004472B9', fill_type='solid') #blue
+        elif str(vals)[index] == '2':
+            code_color = PatternFill(start_color='004CA454', end_color='004CA454', fill_type='solid') #green
+        elif str(vals)[index] == '3':
+            code_color = PatternFill(start_color='00D49b00', end_color='00D49b00', fill_type='solid') #orange
+        elif str(vals)[index] == '4':
+            code_color = PatternFill(start_color='00BE4C39', end_color='00BE4C39', fill_type='solid') #red
+        elif str(vals)[index] == '5':
+            code_color = PatternFill(start_color='009351A6', end_color='009351A6', fill_type='solid') #purple
+            
         for v in vals:
             cell = ws.cell(row = this_row, column = this_col)
             cell.value = v
+            cell.fill = code_color
             if ws.column_dimensions[get_column_letter(this_col)].width < len(str(v)):
-                ws.column_dimensions[get_column_letter(this_col)].width = len(str(v))
+                ws.column_dimensions[get_column_letter(this_col)].width = len(str(v)) + 4
             this_col += 1
         self.numrows += 1
         self.worksheet = ws
@@ -665,7 +687,7 @@ class ExcelLog(Log):
                 cell = ws.cell(row = this_row, column = this_col)
                 cell.value = header
                 if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
-                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header))
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header)) + 4
                 this_col += 1
         else:
             this_col = 1
@@ -673,11 +695,14 @@ class ExcelLog(Log):
             for header in  self.heading_row:
                 cell = ws.cell(row = this_row, column = this_col)
                 cell.value = header
+                print "ELSE: "
+                print cell.value
                 if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
-                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header))
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header)) + 4
                 this_col += 1
         self.numrows += 1
         self.worksheet = ws
+        
 
 class Email(GenericType):
     def __init__(self, kwargs={}):
