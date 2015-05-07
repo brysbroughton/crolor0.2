@@ -42,15 +42,31 @@ class CrawlJob(crol.GenericType):
         self.log.filename = self.registration.department.name
         self.log.openfile()
         self.setprop('crawl', crol.Crawl({'seed_url':self.registration.site, 'log':self.log}))
-        self.crawl.start(self.lognode)#need to pass logging function here
+        self.crawl.start(self.reportnode)#need to pass logging function here
         self.log.readreport(self.crawl.crawl_report)
         self.log.closefile()
         #if self.has_broken_links:
             #self.applyactions()
     
-    def lognode(self, node):
+    def reportnode(self, node):
+        #collect and report url statistics
+        self.crawl.crawl_report.statistics['total_count'] += 1
+        if str(node.status).startswith('2'): self.crawl.crawl_report.statistics['ok_count'] += 1
+        if str(node.status).startswith('3'): self.crawl.crawl_report.statistics['redirected_count'] += 1
         if str(node.status) == '404':
+            self.crawl.crawl_report.statistics['broken_count'] += 1
             self.has_broken_links = True
+        
+        #report node url_data
+        if node.parent == 'HEAD': parent = node.parent
+        else: parent = node.parent.url
+        self.crawl.crawl_report.addreport(crol.UrlReport({
+            'url' : node.url,
+            'mimetype' : node.mimetype,
+            'status' : node.status,
+            'reason' : node.reason,
+            'parent_url' : parent
+        }))
     
     def applyactions(self):
         for a in self.registration.actions:

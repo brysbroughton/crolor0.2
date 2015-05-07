@@ -125,6 +125,12 @@ class CrawlReport(GenericType):
             'crawl' : None,
             'seed_url' : None,
             'url_reports' : [],
+            'statistics' : {
+                'total_count' : 0,
+                'ok_count' : 0,
+                'redirected_count' : 0,
+                'broken_count' : 0
+            }
         }
         
         super(CrawlReport, self).__init__(**kwargs)
@@ -355,13 +361,6 @@ class Crawl(GenericType):
             if new_url:
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
-                self.crawl_report.addreport(UrlReport({
-                    'url' : new_url,
-                    'mimetype' : new_node.mimetype,
-                    'status' : new_node.status,
-                    'reason' : new_node.reason,
-                    'parent_url' : new_node.parent.url
-                }))
                 node.children.append(new_node)
                 if funcin: funcin(new_node)
                 if new_url not in self.visited_urls:
@@ -387,5 +386,4 @@ class Crawl(GenericType):
                 return False
         else:
             return False
-          
 

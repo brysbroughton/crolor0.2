@@ -112,10 +112,10 @@ class WebLog(Log):
         
         #build and write report_stats from crawl_report
         self.html_chunks['report_stats'] = self.table_wrapper + self.buildrow(['STATISTIC', 'VALUE'])
-        broken_count = 0
-        for report in self.crawl_report.url_reports:
-            if self.statuscolor(report.status) == 'red': broken_count += 1
-        self.html_chunks['report_stats'] += self.buildrow(['Broken urls found:', broken_count])
+        self.html_chunks['report_stats'] += self.buildrow(['Total urls found:', self.crawl_report.statistics['total_count']])
+        self.html_chunks['report_stats'] += self.buildrow(['OK urls found:', self.crawl_report.statistics['ok_count']])
+        self.html_chunks['report_stats'] += self.buildrow(['Redirected urls found:', self.crawl_report.statistics['redirected_count']])
+        self.html_chunks['report_stats'] += self.buildrow(['Broken urls found:', self.crawl_report.statistics['broken_count']])
         self.html_chunks['report_stats'] += self.wrapper_after
         self.writefile(self.html_chunks['report_stats'])
         
