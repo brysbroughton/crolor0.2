@@ -350,19 +350,19 @@ class Crawl(GenericType):
                 new_url = node.normalize(l)
             except IOError as error:
                 print 'Could not normalize url: ', l#error
-            if new_url and new_url not in self.visited_urls:
+                
+            if new_url:
                 new_node = Node({'url':new_url})
-                new_node.setprop('parent', node)
-                node.children.append(new_node)
-                if funcin: funcin(new_node)
-                if self.shouldfollow(new_url):
-                    self.reccrawl(new_node, funcin)
-                else:
-                    self.visited_urls.add(new_url)
             else:
                 new_node = Node({'url':'', 'status':'404', 'reason':'Empty link'})
-                new_node.setprop('parent', node)
-                node.children.append(new_node)
+            new_node.setprop('parent', node)
+            node.children.append(new_node)
+            
+            if funcin: funcin(new_node)
+            
+            if new_url not in self.visited_urls:
+                if self.shouldfollow(new_url):
+                    self.reccrawl(new_node, funcin)
     
     def shouldfollow(self, url):
         """
@@ -379,4 +379,5 @@ class Crawl(GenericType):
                 return False
         else:
             return False
+
 
