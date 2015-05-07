@@ -139,6 +139,10 @@ class CrawlReport(GenericType):
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
     
     def addreport(self, report):
+        """
+        Adds the given url_report to url_reports list.
+        """
+        
         self.url_reports.append(report)
 
 
@@ -347,6 +351,12 @@ class Crawl(GenericType):
         #self.setprop('log', WebLog({'crawl_report':self.crawl_report}))
     
     def reccrawl(self, node, funcin=None):
+        """
+        Creates a node for each link found on the given node.
+        Adds each new_node as children to the given node.
+        Calls itself for each new crawlable child.
+        """
+        
         self.visited_urls.add(node.url)
         
         for l in node.links:

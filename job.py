@@ -39,6 +39,15 @@ class CrawlJob(crol.GenericType):
             self.registration.setprop('log', self.log)
     
     def go(self):
+        """
+        Starts the CrawlJob().
+        Opens the appropriate file.
+        Creates and starts Crawl() with reportnode().
+        Sends the built crawl_report to log.
+        Closes opened file.
+        Calls applyactions() is the crawl_report had broken links.
+        """
+        
         self.log.filename = self.registration.department.name
         self.log.openfile()
         self.setprop('crawl', crol.Crawl({'seed_url':self.registration.site, 'log':self.log}))
@@ -49,6 +58,12 @@ class CrawlJob(crol.GenericType):
             #self.applyactions()
     
     def reportnode(self, node):
+        """
+        Collects data from the given node.
+        Adds appropriate statistics to crawl_report.
+        Adds UrlReport to crawl_report.
+        """
+        
         #collect and report url statistics
         self.crawl.crawl_report.statistics['total_count'] += 1
         if str(node.status).startswith('2'): self.crawl.crawl_report.statistics['ok_count'] += 1
@@ -69,6 +84,10 @@ class CrawlJob(crol.GenericType):
         }))
     
     def applyactions(self):
+        """
+        Calls actions.apply() for each action in registration.actions.
+        """
+        
         for a in self.registration.actions:
             actions.apply(a, self.registration)
 

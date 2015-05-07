@@ -16,7 +16,7 @@ class Log(crol.GenericType):
             'endfilename' : '.log.txt',
             'head_text' : 'header\n',
             'foot_text' : 'footer',
-            'filePointer' : None,
+            'file_pointer' : None,
             "row_before" : '',
             "row_after" : '',
             "col_before" : '',
@@ -27,17 +27,17 @@ class Log(crol.GenericType):
     
     def openfile(self):
         f = open(self.path+self.filename+self.endfilename, 'w')
-        self.setprop('filePointer', f)
+        self.setprop('file_pointer', f)
         self.writefile(self.head_text)
     
     def writefile(self, new_val):
-        self.filePointer.write(new_val)
-        self.filePointer.flush()
-        os.fsync(self.filePointer)
+        self.file_pointer.write(new_val)
+        self.file_pointer.flush()
+        os.fsync(self.file_pointer)
     
     def closefile(self):
         self.writefile(self.foot_text)
-        self.filePointer.close
+        self.file_pointer.close
     
     def writerow(self, row):
         string_bits = []
@@ -75,7 +75,7 @@ class WebLog(Log):
             'path' : './',
             'filename' : 'webLog',
             'endfilename' : '.log.html',
-            'filePointer' : None,
+            'file_pointer' : None,
             'html_before' : '<!DOCTYPE html><html>\n<head></head>\n<body>',
             'html_after' : '\n</body></html>',
             'table_wrapper' : '\n<div class="table">',
@@ -96,10 +96,20 @@ class WebLog(Log):
             self.readreport(self.crawl_report)
     
     def openfile(self):
+        """
+        Opens file based on endfilename.
+        Assigns the open file to file_pointer.
+        """
+        
         f = open(self.path+self.filename+self.endfilename, 'w')
-        self.setprop('filePointer', f)
+        self.setprop('file_pointer', f)
     
     def readreport(self, crawl_report):
+        """
+        Reads the statistics and url_reports from the given CrawlReport.
+        Writes the url_data and report_stats into the opened file.
+        """
+        
         self.setprop('crawl_report', crawl_report)
         self.writefile(self.html_before)
         
@@ -122,7 +132,11 @@ class WebLog(Log):
         self.writefile(self.html_after)
     
     def closefile(self):
-        self.filePointer.close
+        """
+        Closes the currently open file.
+        """
+        
+        self.file_pointer.close
     
     def buildrow(self, row):
         """
@@ -148,11 +162,19 @@ class WebLog(Log):
         return ''.join(string_bits)
     
     def isurl(self, string):
+        """
+        Returns boolean based on the given url being http:// or https://.
+        """
+        
         string = str(string)
         if string.startswith('http://') or string.startswith('https://'): return True
         else: return False
     
     def statuscolor(self, status):
+        """
+        Returns the corresponding color based on the given status code.
+        """
+        
         #1xx informational status
         if isinstance(status, (int, long)) and str(status).startswith('1'): return 'blue'
         #2xx success status
@@ -167,6 +189,10 @@ class WebLog(Log):
         else: return None
     
     def injectcss(self):
+        """
+        Reads the css from weblog.css and writes it directly into html_before.
+        """
+        
         try:
             css_file = open('weblog.css', 'r')
             css = css_file.read()
@@ -188,7 +214,7 @@ class CsvLog(Log):
             'endfilename' : '.log.csv',
             'head_text' : 'header\n',
             'foot_text' : 'footer',
-            'filePointer' : None,
+            'file_pointer' : None,
             "row_before" : '',
             "row_after" : '\n',
             "col_before" : '',
