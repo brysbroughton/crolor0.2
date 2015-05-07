@@ -103,13 +103,6 @@ class WebLog(Log):
         self.setprop('crawl_report', crawl_report)
         self.writefile(self.html_before)
         
-        #build and write url_data from crawl_report
-        self.html_chunks['url_data'] = self.table_wrapper + self.buildrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
-        for report in self.crawl_report.url_reports:
-            self.html_chunks['url_data'] += self.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
-        self.html_chunks['url_data'] += self.wrapper_after
-        self.writefile(self.html_chunks['url_data'])
-        
         #build and write report_stats from crawl_report
         self.html_chunks['report_stats'] = self.table_wrapper + self.buildrow(['STATISTIC', 'VALUE'])
         self.html_chunks['report_stats'] += self.buildrow(['Total urls found:', self.crawl_report.statistics['total_count']])
@@ -118,6 +111,13 @@ class WebLog(Log):
         self.html_chunks['report_stats'] += self.buildrow(['Broken urls found:', self.crawl_report.statistics['broken_count']])
         self.html_chunks['report_stats'] += self.wrapper_after
         self.writefile(self.html_chunks['report_stats'])
+        
+        #build and write url_data from crawl_report
+        self.html_chunks['url_data'] = self.table_wrapper + self.buildrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
+        for report in self.crawl_report.url_reports:
+            self.html_chunks['url_data'] += self.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
+        self.html_chunks['url_data'] += self.wrapper_after
+        self.writefile(self.html_chunks['url_data'])
         
         self.writefile(self.html_after)
     
