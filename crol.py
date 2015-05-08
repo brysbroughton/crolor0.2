@@ -215,6 +215,9 @@ class Node(GenericType):
             self.request()
         elif self.urlparse.scheme == 'mailto':
             self.checkemail()
+        elif not self.url == '':
+            self.setprop('status', 416)
+            self.setprop('reason', 'Unsupported URI Scheme')
     
     def normalize(self, link):
         """
@@ -334,7 +337,7 @@ class Node(GenericType):
         """
         valid = re.match('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,4}$', self.urlparse.path)
         self.setprop('status', 200 if valid else 404)
-        self.setprop('reason', 'Address correctly formatted' if valid else 'invalid email address')
+        self.setprop('reason', 'Address Correctly Formatted' if valid else 'Invalid Email Address')
 
 
 class Crawl(GenericType):
@@ -383,7 +386,7 @@ class Crawl(GenericType):
                 print 'Could not normalize url: ', l
                 
             if new_url: new_node = Node({'url':new_url})
-            else: new_node = Node({'url':'', 'status':404, 'reason':'Empty link'})
+            else: new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
             new_node.setprop('parent', node)
             node.children.append(new_node)
             

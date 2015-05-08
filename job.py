@@ -1,15 +1,6 @@
 import crol, logs, actions
 
 
-class Job:
-
-    visited_urls = set([])
-    
-    def __init__(self):
-        pass
-        
-
-
 class CrawlJob(crol.GenericType):
     """
     CrawlJob must be instantiated with valid registration object,
@@ -31,7 +22,6 @@ class CrawlJob(crol.GenericType):
         
         if not isinstance(self.log, logs.WebLog):
             self.setprop('log', logs.WebLog(self.log or {}))
-            self.registration.setprop('log', self.log)
     
     def go(self):
         """
