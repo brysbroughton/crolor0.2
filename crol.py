@@ -122,7 +122,6 @@ class CrawlReport(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'crawl_report',
-            'crawl' : None,
             'seed_url' : None,
             'url_reports' : [],
             'statistics' : {
@@ -144,6 +143,30 @@ class CrawlReport(GenericType):
         """
         
         self.url_reports.append(report)
+    
+    def reportnode(self, node):
+        """
+        Collects data from the given node.
+        Adds appropriate statistics to crawl_report.
+        Adds UrlReport to crawl_report.
+        """
+        
+        #collect and report url statistics
+        self.statistics['total_count'] += 1
+        if str(node.status).startswith('2'): self.statistics['ok_count'] += 1
+        if str(node.status).startswith('3'): self.statistics['redirected_count'] += 1
+        if str(node.status) == '404': self.statistics['broken_count'] += 1
+        
+        #report node url_data
+        if node.parent == 'HEAD': parent = node.parent
+        else: parent = node.parent.url
+        self.addreport(UrlReport({
+            'url' : node.url,
+            'mimetype' : node.mimetype,
+            'status' : node.status,
+            'reason' : node.reason,
+            'parent_url' : parent
+        }))
 
 
 class UrlReport(GenericType):
@@ -343,12 +366,10 @@ class Crawl(GenericType):
         Begin the crawl process from url seed
         """
         
-        self.setprop('crawl_report', CrawlReport({'crawl':self, 'seed_url':self.seed_url}))
         head = Node({'url':self.seed_url, 'parent':'HEAD'})
         self.setprop('node_tree', head)
         if funcin: funcin(head)
         self.reccrawl(head, funcin)
-        #self.setprop('log', WebLog({'crawl_report':self.crawl_report}))
     
     def reccrawl(self, node, funcin=None):
         """

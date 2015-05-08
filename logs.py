@@ -82,10 +82,6 @@ class WebLog(Log):
             'row_wrapper' : '\n\n<div class="row">',
             'col_wrapper' : '\n<div class="col">',
             'wrapper_after' : '</div>',
-            'html_chunks' : {
-                'url_data' : None,
-                'report_stats' : None
-            },
             'default_headings' : [],
             'crawl_report' : None
         }
@@ -104,32 +100,32 @@ class WebLog(Log):
         f = open(self.path+self.filename+self.endfilename, 'w')
         self.setprop('file_pointer', f)
     
-    def readreport(self, crawl_report):
+    def reporttofile(self, crawl_report):
         """
-        Reads the statistics and url_reports from the given CrawlReport.
+        Reads the given CrawlReport.
         Writes the url_data and report_stats into the opened file.
         """
         
         self.setprop('crawl_report', crawl_report)
+        self.openfile()
         self.writefile(self.html_before)
         
-        #build and write report_stats from crawl_report
-        self.html_chunks['report_stats'] = self.table_wrapper + self.buildrow(['STATISTIC', 'VALUE'])
-        self.html_chunks['report_stats'] += self.buildrow(['Total urls found:', self.crawl_report.statistics['total_count']])
-        self.html_chunks['report_stats'] += self.buildrow(['OK urls found:', self.crawl_report.statistics['ok_count']])
-        self.html_chunks['report_stats'] += self.buildrow(['Redirected urls found:', self.crawl_report.statistics['redirected_count']])
-        self.html_chunks['report_stats'] += self.buildrow(['Broken urls found:', self.crawl_report.statistics['broken_count']])
-        self.html_chunks['report_stats'] += self.wrapper_after
-        self.writefile(self.html_chunks['report_stats'])
+        #write in report_stats from crawl_report
+        self.writefile(self.table_wrapper + self.buildrow(['STATISTIC', 'VALUE']))
+        self.writefile(self.buildrow(['Total urls found:', self.crawl_report.statistics['total_count']]))
+        self.writefile(self.buildrow(['OK urls found:', self.crawl_report.statistics['ok_count']]))
+        self.writefile(self.buildrow(['Redirected urls found:', self.crawl_report.statistics['redirected_count']]))
+        self.writefile(self.buildrow(['Broken urls found:', self.crawl_report.statistics['broken_count']]))
+        self.writefile(self.wrapper_after)
         
-        #build and write url_data from crawl_report
-        self.html_chunks['url_data'] = self.table_wrapper + self.buildrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
+        #write in url_data from crawl_report
+        self.writefile(self.table_wrapper + self.buildrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT']))
         for report in self.crawl_report.url_reports:
-            self.html_chunks['url_data'] += self.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
-        self.html_chunks['url_data'] += self.wrapper_after
-        self.writefile(self.html_chunks['url_data'])
+            self.writefile(self.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url]))
+        self.writefile(self.wrapper_after)
         
         self.writefile(self.html_after)
+        self.closefile()
     
     def closefile(self):
         """
