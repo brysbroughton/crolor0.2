@@ -11,20 +11,20 @@ class GenericType(object):
     
     type: generic
     """
-    
+
     def setprop(self, key, val):
         if self.props.has_key(key):
             self.props[key] = val
             setattr(self, key, val)
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
-    
+
     def getprop(self, key):
         if self.props.has_key(key):
             return self.props[key]
         else:
             raise Exception('%s has no property: %s' % (self.props['type'], key))
-    
+
     def listprops(self):
         for key, val in self.props.iteritems():
             print "%s : %s" % (key, val)
@@ -64,17 +64,13 @@ class Registration(GenericType):
             'type' : 'registration',
             'department' : None,
             'site' : None,
-            'log' : None,
             'actions' : []
         }
         
         super(Registration, self).__init__(**kwargs)
         
         if self.props['department']:
-            self.setprop('department', Department(self.props['department']))
-            
-        if self.props['log']:
-            self.setprop('log', WebLog(self.props[log]))
+            setattr(self, 'department', Department(self.props['department']))
 
 
 class Department(GenericType):
@@ -113,7 +109,6 @@ class Registry(GenericType):
         if self.props['registrations']:
             setattr(self, 'registrations', [Registration(r) for r in self.props['registrations']])
 
-
 class CrawlReport(GenericType):
     """
     Object instatiated 1-1 with a crawl job.
@@ -131,7 +126,7 @@ class CrawlReport(GenericType):
                 'broken_count' : 0
             }
         }
-        
+
         super(CrawlReport, self).__init__(**kwargs)
         
         if self.props['url_reports']:
@@ -198,7 +193,6 @@ class Node(GenericType):
             'url' : None,
             'response' : None,#replace by response object from httplib
             'urlparse' : None,
-            'response' : None,
             'headers' : None,
             'mimetype' : None,
             'status' : None,
@@ -215,6 +209,7 @@ class Node(GenericType):
         print 'link:', self.url #to show progess in console
         
         self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
+        print self.url #to show progess in console
         self.setprop('urlparse', urlparse(self.getprop('url')))
         if self.urlparse.scheme in ['http', 'https']:
             self.request()
@@ -281,15 +276,13 @@ class Node(GenericType):
             conn = httplib.HTTPSConnection(self.urlparse.netloc)
         else:
             raise Exception("Node attempted to request unsupported protocol: "+self.url)
-        
-        #get response from HTTPConnnection and set props
+                    
         conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
         self.setprop('response', response)
         self.setprop('status', response.status)
         self.setprop('reason', response.reason)
         self.setprop('headers', response.getheaders())
-        
         #check for text/html mime type to scrape html
         content_type = response.getheader('content-type')
         if ';' in str(content_type): content_type = content_type.split(';')[0]
@@ -333,7 +326,7 @@ class Node(GenericType):
             )
         
         return links
-    
+        
     def checkemail(self):
         """
         Called on node that contains an email link.
@@ -402,10 +395,10 @@ class Crawl(GenericType):
     
     def shouldfollow(self, url):
         """
-        Checks if given url should be crawled.
-        Returns boolean.
+        Take node object, return boolean
+        #don't crawl the same url 2x
+        #only crawl urls within a subsite of the input seed
         """
-        
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
