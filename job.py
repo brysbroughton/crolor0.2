@@ -1,7 +1,4 @@
 import crol, logs, actions
-from otcregistry import registry_data as rd
-
-rg = crol.Registry(rd)
 
 class Job:
     """
@@ -64,8 +61,4 @@ class CrawlJob(crol.GenericType):
         
         for a in self.registration.actions:
             actions.apply(a, self.registration)
-
-##this is how the CrawlJob is used
-#cj = CrawlJob({'registration':rg.registrations[0]})
-#cj.go()
 

@@ -2,7 +2,6 @@ import crol
 import os, sys, smtplib
 
 
-
 class Log(crol.GenericType):
     """
     Generic text log handling for crawl job
