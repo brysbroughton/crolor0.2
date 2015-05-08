@@ -38,4 +38,3 @@ registry_data = {
 }
 
 registrations = registry_data['registrations']
-

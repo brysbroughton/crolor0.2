@@ -12,6 +12,7 @@ from openpyxl.styles import Color, PatternFill, Font, Border
 from openpyxl.formatting import ColorScaleRule, CellIsRule, FormulaRule
 
 
+
 class GenericType(object):
     """
     General template for associating properties to actions.
@@ -613,7 +614,6 @@ class ExcelLog(Log):
                 cell.value = header
                 if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
                     ws.column_dimensions[get_column_letter(this_col)].width = len(str(header)) + 4
-
                 this_col += 1
         else:
             this_col = 1
@@ -628,7 +628,8 @@ class ExcelLog(Log):
                 this_col += 1
         self.numrows += 1
         self.worksheet = ws
-        
+
+
 class Email(GenericType):
     def __init__(self, kwargs={}):
         self.props = {
