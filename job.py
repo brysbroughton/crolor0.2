@@ -43,7 +43,6 @@ class CrawlJob(crol.GenericType):
         self.log.closefile()
         if self.has_broken_links:
             self.applyactions()
-            self.sendemail()
     
     def lognode(self, node):
         if str(node.status) == '404':

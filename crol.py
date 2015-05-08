@@ -139,6 +139,12 @@ class CrawlReport(GenericType):
         if self.props['url_reports']:
             setattr(self, 'url_reports', [UrlReport(r) for r in self.props['url_reports']])
         
+    def addreport(self, report):
+        if report.type == 'page_report':
+            self.page_reports.add(report)
+        elif report.type == 'url_report':
+            self.url_reports.append(report)
+            self.html_chunk += self.log.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
 
 
 class PageReport(GenericType):
@@ -186,22 +192,21 @@ class Node(GenericType):
             'type' : 'node',
             'url' : None,
             'response' : None,#replace by response object from httplib
-            'status' : None,
-            'reason' : None,
             'urlparse' : None,
             'headers' : None,
             'mimetype' : None,
             'status' : None,
             'reason' : None,
-            'links' : set([]),
+            'links' : [],
             'parent': None,#'HEAD'
-            'children' : set([])
+            'children' : []
         }
         
         super(Node, self).__init__(**kwargs)
         
-        if not self.url:
-            raise Exception("Node object must be created with a url")
+        #if not self.url:
+        #    raise Exception("Node object must be created with a url")
+        print 'link:', self.url #to show progess in console
         
         self.setprop('url', self.normalize(self.getprop('url')))#first step is to normalize all urls
         print self.url #to show progess in console
@@ -219,10 +224,16 @@ class Node(GenericType):
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
         
-        new_parsed = urlparse(link.replace('\n', ''))
-        #check and throw exception for mailto
+        if link is None or len(link) == 0:
+            return ''
+            
+        link = link.strip()#remove whitespace from ends
+        
+        new_parsed = urlparse(link)
+
         if new_parsed.scheme == 'mailto':
-            return ':'.join(['mailto', new_parsed.path])
+            return link
+
         #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
@@ -273,11 +284,11 @@ class Node(GenericType):
         self.setprop('reason', response.reason)
         self.setprop('headers', response.getheaders())
         #check for text/html mime type to scrape html
-        url_info = urllib.urlopen(self.url).info()
-        self.setprop('mimetype', url_info.type)
-        if self.getprop('mimetype') == 'text/html':
-            html_response = response.read()
-            self.setprop('links', self.scrape(html_response))
+        self.setprop('mimetype', response.getheader('content-type'))
+        if self.mimetype is not None and 'text/html' in self.mimetype:
+            if str(self.status) != '404':
+                html_response = response.read()
+                self.setprop('links', self.scrape(html_response))
     
     def scrape(self, html):
         """
@@ -289,11 +300,11 @@ class Node(GenericType):
         the same link in the body as in the header redirect.
         """
         
-        links = set()
+        links = []
         
         #check headers for redirects
         redirects = filter(lambda x: x[0] == 'location', self.headers)
-        links.update(set([x[1] for x in redirects]))
+        links.extend([x[1] for x in redirects])
         
         #scrape response body
         soup = bs(html)
@@ -303,14 +314,14 @@ class Node(GenericType):
             end = str(m).find('"',index, len(str(m)))
             if index != -1:
                 link = str(m)[index+4:end]
-                links.add(link)
-
+                links.append(link)
+        
         attrs = ['background', 'cite', 'codebase', 'href', 'longdesc', 'src']
             
         for a in attrs:
-            links.update(set(
+            links.extend(
                 map(lambda x: x[a], soup.findAll(**{a:True}))# **{} unzips dictionary to a=True
-            ))
+            )
         
         return links
         
@@ -350,23 +361,27 @@ class Crawl(GenericType):
         self.reccrawl(head, funcin)
     
     def reccrawl(self, node, funcin=None):
-        self.getprop('visited_urls').add(node.url)
+        self.visited_urls.add(node.url)
         
         for l in node.links:
             new_url = None
             try:
                 new_url = node.normalize(l)
             except IOError as error:
-                print 'Could not normalize url: ', new_url#error
-            if new_url and new_url not in self.getprop('visited_urls'):
+                print 'Could not normalize url: ', l#error
+                
+            if new_url:
                 new_node = Node({'url':new_url})
-                new_node.setprop('parent', node)
-                node.children.add(new_node)
-                if funcin: funcin(new_node)
+            else:
+                new_node = Node({'url':'', 'status':'404', 'reason':'Empty link'})
+            new_node.setprop('parent', node)
+            node.children.append(new_node)
+            
+            if funcin: funcin(new_node)
+            
+            if new_url not in self.visited_urls:
                 if self.shouldfollow(new_url):
                     self.reccrawl(new_node, funcin)
-                else:
-                    self.getprop('visited_urls').add(new_url)
     
     def shouldfollow(self, url):
         """
@@ -377,8 +392,6 @@ class Crawl(GenericType):
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
-            print url.path[:len(seed.path)]
-            print seed.path
             if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
                 return True
             else:
@@ -464,32 +477,40 @@ class WebLog(Log):
             'head_text' : '<!DOCTYPE html><html><head></head><body><table>',
             'foot_text' : '\n</table></body></html>',
             'filePointer' : None,
-            "row_before" : '\n<tr>',
-            "row_after" : '\n</tr>',
-            "col_before" : '\n\t<td>',
-            "col_after" : '</td>',
-            'hrow_before' : '<tr>',
-            'hrow_after' : '</tr>',
-            'hcol_before' : '<th>',
-            'hcol_after' : '</th>',
-            "default_headings" : []
+            'html_before' : '<!DOCTYPE html><html>\n<head></head>\n<body>',
+            'html_after' : '\n</body></html>',
+            'table_wrapper' : '\n<div class="table">',
+            'row_wrapper' : '\n\n<div class="row">',
+            'col_wrapper' : '\n<div class="col">',
+            'wrapper_after' : '</div>',
+            'html_chunks' : [],
+            'default_headings' : []
         }
         GenericType.__init__(self, **kwargs)
-
-    def headingrow(self, headings=None):
-        string_bits = []
-        if headings:
-            string_bits.append(self.hrow_before)
-            for header in  headings:
-                string_bits.append(self.hcol_before)
-                string_bits.append(header)
-                string_bits.append(self.hcol_after)
-        else:
-            string_bits.append(self.default_headings)
-        string_bits = map(str, string_bits)
-        self.writefile(''.join(string_bits))
-
-    def writerow(self, row):
+        self.injectcss()
+    
+    def openfile(self):
+        f = open(self.path+self.filename+self.endfilename, 'w')
+        self.setprop('filePointer', f)
+        self.writefile(self.html_before)
+    
+    def closefile(self):
+        for h in self.html_chunks:
+            self.writefile(h)
+        self.writefile(self.html_after)
+        self.filePointer.close
+    
+    def wrapchunk(self, html_chunk):
+        wrapped_chunk = self.table_wrapper + html_chunk + self.wrapper_after
+        self.html_chunks.append(wrapped_chunk)
+        return wrapped_chunk
+    
+    def buildrow(self, row):
+        """
+        Builds a string of HTML code from the given row.
+        Returns the HTML code as a string.
+        """
+        
         string_bits = []
         string_bits.append(self.row_before)
         for col in row:
@@ -682,4 +703,3 @@ class Email(GenericType):
             s = smtplib.SMTP(self.smtp_server)
             s.sendmail(self.from_address, addresses, msg.as_string())
             s.quit()
-
