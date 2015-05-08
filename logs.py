@@ -111,17 +111,19 @@ class WebLog(Log):
         self.writefile(self.html_before)
         
         #write in report_stats from crawl_report
-        self.writefile(self.table_wrapper + self.buildrow(['STATISTIC', 'VALUE']))
-        self.writefile(self.buildrow(['Total urls found:', self.crawl_report.statistics['total_count']]))
-        self.writefile(self.buildrow(['OK urls found:', self.crawl_report.statistics['ok_count']]))
-        self.writefile(self.buildrow(['Redirected urls found:', self.crawl_report.statistics['redirected_count']]))
-        self.writefile(self.buildrow(['Broken urls found:', self.crawl_report.statistics['broken_count']]))
+        self.writefile(self.table_wrapper)
+        self.writerow(['STATISTIC', 'VALUE'])
+        self.writerow(['Total urls found:', self.crawl_report.statistics['total_count']])
+        self.writerow(['OK urls found:', self.crawl_report.statistics['ok_count']])
+        self.writerow(['Redirected urls found:', self.crawl_report.statistics['redirected_count']])
+        self.writerow(['Broken urls found:', self.crawl_report.statistics['broken_count']])
         self.writefile(self.wrapper_after)
         
         #write in url_data from crawl_report
-        self.writefile(self.table_wrapper + self.buildrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT']))
+        self.writefile(self.table_wrapper)
+        self.writerow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
         for report in self.crawl_report.url_reports:
-            self.writefile(self.buildrow([report.status, report.reason, report.mimetype, report.url, report.parent_url]))
+            self.writerow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
         self.writefile(self.wrapper_after)
         
         self.writefile(self.html_after)
@@ -134,7 +136,7 @@ class WebLog(Log):
         
         self.file_pointer.close
     
-    def buildrow(self, row):
+    def writerow(self, row):
         """
         Builds a string of HTML code from the given row.
         Returns the HTML code as a string.
@@ -155,7 +157,7 @@ class WebLog(Log):
             else: string_bits.append(self.wrapper_after)
         string_bits.append(self.wrapper_after)
         string_bits = map(str, string_bits)
-        return ''.join(string_bits)
+        self.writefile(''.join(string_bits))
     
     def isurl(self, string):
         """
