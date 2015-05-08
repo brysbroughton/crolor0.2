@@ -216,7 +216,6 @@ class Node(GenericType):
         elif self.urlparse.scheme == 'mailto':
             self.checkemail()
         elif not self.url == '':
-            self.setprop('status', 416)
             self.setprop('reason', 'Unsupported URI Scheme')
     
     def normalize(self, link):
