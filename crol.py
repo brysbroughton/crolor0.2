@@ -236,19 +236,20 @@ class Node(GenericType):
         
         #prepends parent path if missing for relative links
         link_bits = re.split('/', link)
-        if link.startswith('./') or link.startswith('../'):
+        if link.startswith('.'):
             parent_bits = re.split('/', self.urlparse.path)[:-1]
             link_bits = parent_bits + link_bits
+        if link.endswith('.'): link_bits += ['']
         
         #converts relative links into how browsers view them
-        if '../' in link:
+        if '.' in link:
             for l in link_bits:
                 if l == '..':
                     link_bits.pop(link_bits.index(l) - 1)
                     link_bits.pop(link_bits.index(l))
-            link = '/'.join(link_bits)
-        elif './' in link: link = link.replace('./', '')
+                if l == '.': link_bits.pop(link_bits.index(l))
         
+        link = '/'.join(link_bits)
         new_parsed = urlparse(link)
         
         if new_parsed.scheme == 'mailto':
