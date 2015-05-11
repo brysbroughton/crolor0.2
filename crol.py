@@ -234,18 +234,6 @@ class Node(GenericType):
         if link is None or len(link) == 0:
             return ''
         
-        link = link.strip()#remove whitespace from ends
-        
-        # takes care of all instances of url . naviation
-        if '/./' in link: link = link.replace('./', '')
-        if '/../' in link:
-            link_bits = re.split('/', link)
-            for l in link_bits:
-                if l == '..':
-                    link_bits.pop(link_bits.index(l) - 1)
-                    link_bits.pop(link_bits.index(l))
-            link = '/'.join(link_bits)
-        
         new_parsed = urlparse(link)
         
         if new_parsed.scheme == 'mailto':
@@ -418,7 +406,17 @@ class Crawl(GenericType):
         Returns boolean.
         """
         
-        if url not in self.getprop('visited_urls') and './' not in url:
+        #changes dotnav urls into their actual form
+        if '/./' in url: url = url.replace('./', '')
+        if '/../' in url:
+            url_bits = re.split('/', url)
+            for u in url_bits:
+                if u == '..':
+                    url_bits.pop(url_bits.index(u) - 1)
+                    url_bits.pop(url_bits.index(u))
+            url = '/'.join(url_bits)
+        
+        if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
             if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
