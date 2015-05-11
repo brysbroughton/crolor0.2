@@ -245,7 +245,7 @@ class Node(GenericType):
         if '.' in link:
             for l in link_bits:
                 if l == '..':
-                    link_bits.pop(link_bits.index(l) - 1)
+                    if link_bits.index(l) > 3: link_bits.pop(link_bits.index(l) - 1)
                     link_bits.pop(link_bits.index(l))
                 if l == '.': link_bits.pop(link_bits.index(l))
         
