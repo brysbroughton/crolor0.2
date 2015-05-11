@@ -234,6 +234,21 @@ class Node(GenericType):
         if link is None or len(link) == 0:
             return ''
         
+        #prepends parent path if missing for relative links
+        link_bits = re.split('/', link)
+        if link.startswith('./') or link.startswith('../'):
+            parent_bits = re.split('/', self.urlparse.path)[:-1]
+            link_bits = parent_bits + link_bits
+        
+        #converts relative links into how browsers view them
+        if '../' in link:
+            for l in link_bits:
+                if l == '..':
+                    link_bits.pop(link_bits.index(l) - 1)
+                    link_bits.pop(link_bits.index(l))
+            link = '/'.join(link_bits)
+        elif './' in link: link = link.replace('./', '')
+        
         new_parsed = urlparse(link)
         
         if new_parsed.scheme == 'mailto':
@@ -384,10 +399,8 @@ class Crawl(GenericType):
             new_url = None
             
             #try to normalize url
-            try:
-                new_url = node.normalize(l)
-            except IOError:
-                print 'Could not normalize url: ', l
+            try: new_url = node.normalize(l)
+            except IOError: print 'Could not normalize url: ', l
                 
             if new_url: new_node = Node({'url':new_url})
             else: new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
@@ -405,16 +418,6 @@ class Crawl(GenericType):
         Checks if given url should be crawled.
         Returns boolean.
         """
-        
-        #changes . nav urls into their actual form
-        if '/./' in url: url = url.replace('./', '')
-        if '/../' in url:
-            url_bits = re.split('/', url)
-            for u in url_bits:
-                if u == '..':
-                    url_bits.pop(url_bits.index(u) - 1)
-                    url_bits.pop(url_bits.index(u))
-            url = '/'.join(url_bits)
         
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
