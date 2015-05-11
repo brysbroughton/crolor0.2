@@ -196,7 +196,7 @@ class Node(GenericType):
         self.props = {
             'type' : 'node',
             'url' : None,
-            'response' : None,#replace by response object from httplib
+            'response' : None,
             'urlparse' : None,
             'response' : None,
             'headers' : None,
@@ -204,7 +204,7 @@ class Node(GenericType):
             'status' : None,
             'reason' : None,
             'links' : [],
-            'parent': None,#'HEAD'
+            'parent': None,
             'children' : []
         }
         
@@ -220,6 +220,8 @@ class Node(GenericType):
             self.request()
         elif self.urlparse.scheme == 'mailto':
             self.checkemail()
+        elif not self.url == '':
+            self.setprop('reason', 'Unsupported URI Scheme')
     
     def normalize(self, link):
         """
@@ -231,14 +233,24 @@ class Node(GenericType):
         
         if link is None or len(link) == 0:
             return ''
-            
+        
         link = link.strip()#remove whitespace from ends
         
+        # takes care of all instances of url . naviation
+        if '/./' in link: link = link.replace('./', '')
+        if '/../' in link:
+            link_bits = re.split('/', link)
+            for l in link_bits:
+                if l == '..':
+                    link_bits.pop(link_bits.index(l) - 1)
+                    link_bits.pop(link_bits.index(l))
+            link = '/'.join(link_bits)
+        
         new_parsed = urlparse(link)
-
+        
         if new_parsed.scheme == 'mailto':
             return link
-
+        
         #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
@@ -341,7 +353,7 @@ class Node(GenericType):
         """
         valid = re.match('^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[A-Za-z]{2,4}$', self.urlparse.path)
         self.setprop('status', 200 if valid else 404)
-        self.setprop('reason', 'Address correctly formatted' if valid else 'invalid email address')
+        self.setprop('reason', 'Address Correctly Formatted' if valid else 'Invalid Email Address')
 
 
 class Crawl(GenericType):
@@ -353,7 +365,7 @@ class Crawl(GenericType):
         self.props = {
             'type' : 'crawler',
             'seed_url' : None,
-            'node_tree' : None,#'HEAD'
+            'node_tree' : None,
             'visited_urls' : set([]),
             'crawl_report' : None,
             'log' : None,
@@ -390,7 +402,7 @@ class Crawl(GenericType):
                 print 'Could not normalize url: ', l
                 
             if new_url: new_node = Node({'url':new_url})
-            else: new_node = Node({'url':'', 'status':404, 'reason':'Empty link'})
+            else: new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
             new_node.setprop('parent', node)
             node.children.append(new_node)
             
@@ -406,7 +418,7 @@ class Crawl(GenericType):
         Returns boolean.
         """
         
-        if url not in self.getprop('visited_urls'):
+        if url not in self.getprop('visited_urls') and './' not in url:
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
             if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:

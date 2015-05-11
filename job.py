@@ -1,15 +1,5 @@
 import crol, logs, actions
 
-class Job:
-    """
-    Class description.
-    """
-    
-    visited_urls = set([])
-    
-    def __init__(self):
-        pass
-
 
 class CrawlJob(crol.GenericType):
     """

@@ -10,15 +10,15 @@ registry_data = {
             },
             'actions': []
         },
-        {
-            'site' : 'http://www.otc.edu/webservices',
-            'department' : {
-                'name' : 'Web Services',
-                'main_email' : 'wrighta@otc.edu',
-                'email_group' : ['broughtb@otc.edu','lamelzag@otc.edu']
-            },
-            'actions' : []
-        },
+        #{
+        #    'site' : 'http://www.otc.edu/webservices',
+        #    'department' : {
+        #        'name' : 'Web Services',
+        #        'main_email' : 'wrighta@otc.edu',
+        #        'email_group' : ['broughtb@otc.edu','lamelzag@otc.edu']
+        #    },
+        #    'actions' : []
+        #},
         #{
         #    'site' : 'http://www.otc.edu/news/',
         #    'department' : {
