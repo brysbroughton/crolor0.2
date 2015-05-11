@@ -406,7 +406,7 @@ class Crawl(GenericType):
         Returns boolean.
         """
         
-        #changes dotnav urls into their actual form
+        #changes . nav urls into their actual form
         if '/./' in url: url = url.replace('./', '')
         if '/../' in url:
             url_bits = re.split('/', url)
