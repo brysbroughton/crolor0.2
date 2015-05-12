@@ -226,57 +226,52 @@ class Node(GenericType):
         If essential components (scheme, netloc) are missing, attempt to use those from parent node
         """
         
+        #empty link
         if link is None or len(link) == 0:
             return ''
-        
-        #prepends parent path if missing for relative links
-        link_bits = re.split('/', link)
-        if link.startswith('.'):
-            parent_bits = re.split('/', self.urlparse.path)[:-1]
-            link_bits = parent_bits + link_bits
-        if link.endswith('.'): link_bits += ['']
-        
-        #converts relative links into how browsers view them
-        if '.' in link:
-            for l in link_bits:
-                if l == '..':
-                    if link_bits.index(l) > 3: link_bits.pop(link_bits.index(l) - 1)
-                    link_bits.pop(link_bits.index(l))
-                if l == '.': link_bits.pop(link_bits.index(l))
-        
-        link = '/'.join(link_bits)
+            
         new_parsed = urlparse(link)
-        
-        if new_parsed.scheme == 'mailto':
-            return link
-        
-        #relative paths are tricky
-        new_path = new_parsed.path
-        new_link = []
-        
-        try:
-            if new_path.startswith('/'):
+        generated_path = False #replace by a generated path, when relative link is evaluated
+
+        #if the link has a scheme, treat as absolute url
+        if new_parsed.scheme == '':
+            
+            if new_parsed.path == '' or new_parsed.path.startswith('/'):
                 pass
-            else:#link with no leading slash should be sub-link of current directory
-                if self.urlparse:
-                    old_path_bits = re.split('/', self.urlparse.path)
-                    if '.' in old_path_bits[-1]:#url ends with a filename
-                        new_path_bits = old_path_bits[:-1] + [new_path]
-                        new_path = '/'.join(new_path_bits)
+            else:
+                #evaluating path for relative links
+                current_path_stack = re.split('/', self.urlparse.path)
+                new_path_stack = re.split('/', new_parsed.path)
+                generated_path_stack = current_path_stack
+                
+                #pop(0) is the same as popleft()
+                while new_path_stack:
+                    new_path_bit = new_path_stack.pop(0)
+                    if new_path_bit == '.':
+                        pass
+                    elif new_path_bit == '..':
+                        generated_path_stack.pop()
                     else:
-                        new_path = (self.urlparse.path + '/' + new_parsed.path).replace('//','/')
-            new_link = [
-                (new_parsed.scheme or self.urlparse.scheme) + '://',
-                new_parsed.netloc or self.urlparse.netloc,
-                new_path,
-                #';'+new_parsed.params,
-                '?'+new_parsed.query if new_parsed.query else '',
-                #'#'+new_parsed.fragment
-            ]
-        except AttributeError as AEX:
-            raise Exception("Could not normalize url. Url is mal-formed, or a relative url without a parent node. ORIGINAL ERROR: "+AEX.message)
+                        generated_path_stack.append(new_path_bit)
+                
+                generated_path = '/'.join(generated_path_stack)
         
-        return ''.join(new_link)
+            try:
+                normal_bits = [
+                    self.urlparse.scheme + '://',
+                    self.urlparse.netloc,
+                    generated_path or new_parsed.path,
+                    #';'+new_parsed.params,
+                    '?'+new_parsed.query if new_parsed.query else '',
+                    #'#'+new_parsed.fragment
+                ]
+            except AttributeError as AEX:
+                raise Exception("Could not normalize url. Url is mal-formed, or a relative url without a parent node. ORIGINAL ERROR: "+AEX.message)
+            
+            return ''.join(normal_bits)
+            
+        else:
+            return link
     
     def request(self):
         """
