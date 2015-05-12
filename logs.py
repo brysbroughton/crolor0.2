@@ -4,10 +4,6 @@ from openpyxl import Workbook
 from openpyxl.cell import get_column_letter
 from openpyxl.styles import Color, PatternFill, Font, Border
 from openpyxl.formatting import ColorScaleRule, CellIsRule, FormulaRule
-<<<<<<< HEAD
-=======
-
->>>>>>> b98b492b51616bc8c992a08faa7fc8dbb5d020d3
 
 class Log(crol.GenericType):
     """
@@ -239,16 +235,11 @@ class CsvLog(Log):
             self.writefile(self.heading_row)
         self.writefile(self.row_after)
 
-<<<<<<< HEAD
-class ExcelLog(Log):
-=======
-
 class ExcelLog(Log):
     """
     Excel log handler for crawl job.
     """
     
->>>>>>> b98b492b51616bc8c992a08faa7fc8dbb5d020d3
     def __init__(self, kwargs={}):
         self.props = {
             'type' : 'excelLog',
