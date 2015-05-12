@@ -4,36 +4,36 @@ import email,email.encoders,email.mime.base
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
-def apply(action, registration):
+def apply(action, registration, log):
     """
     Take name of action and a registration object.
     Verify action is defined and execute it on the
     registration object.
     """
     if actions.has_key(action):
-        actions[action](registration)
+        actions[action](registration, log)
     else:
         raise Exception("actions.apply: %s has not been defined." % str(action))
     
-def emailnotify(registration):
+def emailnotify(registration, log):
     """
     Send email to recipients in registration.
     If registration has no recipients, send
     to web@otc.edu and note this.
     """
-    report_location = registration.log.path+registration.log.filename+registration.log.endfilename
+    report_location = log.path+log.filename+log.endfilename
     msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
     subject = 'Crawl Completed'
     to_address = registration.department.main_email
     cc_address = ''
     files = [report_location]
     from_address = 'web@otc.edu'
-    file_name = registration.log.filename + registration.log.endfilename
+    file_name = log.filename + log.endfilename
     email_props = {'files':files, 'filename':file_name, 'cc_address':cc_address, 'to_address':to_address, 'from_address':from_address, 'subject':subject, 'msg_body':msg}
     e = Email(email_props)
     e.send()
     
-def asanapush(registration):
+def asanapush(registration, log):
     """
     use Asana API to push a task with the details of
     the crawl. Email web if there is an issue with
@@ -41,7 +41,7 @@ def asanapush(registration):
     """
     task_details = asana.links_task_template
     task_details['name'] = registration.department.name + " :: Broken Link Report"
-    asana.pushlogtotask(task_details, registration.log.filename + registration.log.endfilename)
+    asana.pushlogtotask(task_details, log.filename + log.endfilename)
 
     
 class Email(crol.GenericType):
@@ -84,10 +84,8 @@ class Email(crol.GenericType):
                 message = MIMEText(self.msg_body, 'html')
                 msg.attach(message)
             for f in self.files:
-                fp = open(f, 'rb')
-                # now attach the file
-                fileMsg = email.mime.base.MIMEBase('application','html')
-                fileMsg.set_payload(file(f).read())
+                fileMsg = email.mime.base.MIMEBase('application','octet-stream')
+                fileMsg.set_payload(open(f, 'rb').read())
                 email.encoders.encode_base64(fileMsg)
                 fileMsg.add_header('Content-Disposition','attachment;filename=%s' % self.filename)
                 msg.attach(fileMsg)

@@ -20,9 +20,8 @@ class CrawlJob(crol.GenericType):
         if not isinstance(self.registration, crol.Registration):
             self.setprop('registration', crol.Registration(self.registration))
         
-        if not isinstance(self.log, logs.WebLog):
-            self.setprop('log', logs.WebLog(self.log or {}))
-            self.registration.setprop('log', self.log)
+        if not isinstance(self.log, logs.ExcelLog):
+            self.setprop('log', logs.ExcelLog(self.log or {}))
     
     def go(self):
         """
@@ -50,5 +49,5 @@ class CrawlJob(crol.GenericType):
         """
         
         for a in self.registration.actions:
-            actions.apply(a, self.registration)
+            actions.apply(a, self.registration, self.log)
 

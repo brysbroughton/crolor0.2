@@ -30,7 +30,7 @@ def uploadattachment(task_id, file_name):
     It is assumed that the file is in the current directory.
     """
     attpath = asana['url'] + str(task_id) + '/attachments'
-    stream = open(file_name, 'r')
+    stream = open(file_name, 'rb')
     files = {'file':(file_name, stream)}
     r = requests.post(attpath, auth=(asana['apikey'], ''), files=files)
     return r

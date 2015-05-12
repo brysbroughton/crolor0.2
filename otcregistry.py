@@ -1,6 +1,7 @@
 
 registry_data = {
     'registrations' : [
+<<<<<<< HEAD
         {
             'site' : 'https://www.otc.edu/FORMS/webtesting/emptyLink/',
             'department' : {
