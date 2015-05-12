@@ -16,11 +16,11 @@ registry_data = {
             'site' : 'http://www.otc.edu/webservices',
             'department' : {
                 'name' : 'Web Services',
-                'main_email' : 'wrighta@otc.edu',
-                'email_group' : ['wrighta@otc.edu']
+                'main_email' : 'broughtb@otc.edu',
+                'email_group' : ['broughtb@otc.edu']
                 #'email_group' : ['broughtb@otc.edu','lamelzag@otc.edu']
             },
-            'actions' : ['email']
+            'actions' : ['email', 'asana']
         },
         #{
         #    'site' : 'http://www.otc.edu/news/',

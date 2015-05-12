@@ -41,7 +41,7 @@ def asanapush(registration, log):
     """
     task_details = asana.links_task_template
     task_details['name'] = registration.department.name + " :: Broken Link Report"
-    asana.pushlogtotask(task_details, registration.log.filename + registration.log.endfilename)
+    asana.pushlogtotask(task_details, log.filename + log.endfilename)
 
     
 class Email(crol.GenericType):
