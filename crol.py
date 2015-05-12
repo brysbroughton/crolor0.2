@@ -191,14 +191,14 @@ class Node(GenericType):
         self.props = {
             'type' : 'node',
             'url' : None,
-            'response' : None,#replace by response object from httplib
+            'response' : None,
             'urlparse' : None,
             'headers' : None,
             'mimetype' : None,
             'status' : None,
             'reason' : None,
             'links' : [],
-            'parent': None,#'HEAD'
+            'parent': None,
             'children' : []
         }
         
@@ -228,14 +228,28 @@ class Node(GenericType):
         
         if link is None or len(link) == 0:
             return ''
-            
-        link = link.strip()#remove whitespace from ends
         
+        #prepends parent path if missing for relative links
+        link_bits = re.split('/', link)
+        if link.startswith('.'):
+            parent_bits = re.split('/', self.urlparse.path)[:-1]
+            link_bits = parent_bits + link_bits
+        if link.endswith('.'): link_bits += ['']
+        
+        #converts relative links into how browsers view them
+        if '.' in link:
+            for l in link_bits:
+                if l == '..':
+                    if link_bits.index(l) > 3: link_bits.pop(link_bits.index(l) - 1)
+                    link_bits.pop(link_bits.index(l))
+                if l == '.': link_bits.pop(link_bits.index(l))
+        
+        link = '/'.join(link_bits)
         new_parsed = urlparse(link)
-
+        
         if new_parsed.scheme == 'mailto':
             return link
-
+        
         #relative paths are tricky
         new_path = new_parsed.path
         new_link = []
@@ -348,7 +362,7 @@ class Crawl(GenericType):
         self.props = {
             'type' : 'crawler',
             'seed_url' : None,
-            'node_tree' : None,#'HEAD'
+            'node_tree' : None,
             'visited_urls' : set([]),
             'crawl_report' : None,
             'log' : None,
@@ -379,10 +393,8 @@ class Crawl(GenericType):
             new_url = None
             
             #try to normalize url
-            try:
-                new_url = node.normalize(l)
-            except IOError:
-                print 'Could not normalize url: ', l
+            try: new_url = node.normalize(l)
+            except IOError: print 'Could not normalize url: ', l
                 
             if new_url: new_node = Node({'url':new_url})
             else: new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
