@@ -2,7 +2,7 @@ import crol
 import os, sys, smtplib
 from openpyxl import Workbook
 from openpyxl.cell import get_column_letter
-from openpyxl.styles import Color, PatternFill, Font, Border
+from openpyxl.styles import Color, PatternFill, Font, Border, Alignment
 from openpyxl.formatting import ColorScaleRule, CellIsRule, FormulaRule
 
 class Log(crol.GenericType):
@@ -269,10 +269,6 @@ class ExcelLog(Log):
         self.workbook = wb
         self.worksheet = ws
         #self.headingrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
-
-    def writefile(self):
-        wb = self.workbook
-        ws = self.worksheet
     
     def closefile(self):
         self.workbook.save(self.path+self.filename + self.endfilename)
@@ -306,6 +302,31 @@ class ExcelLog(Log):
             this_col += 1
         self.numrows += 1
         self.worksheet = ws
+    
+    def headingrow(self, headings=None):
+        ws = self.workbook.active
+        if headings:
+            this_col = 1
+            this_row = self.numrows
+            for header in  headings:
+                cell = ws.cell(row = this_row, column = this_col)
+                cell.value = header
+                cell.font = Font(size=16)
+                if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header)) + 4
+                this_col += 1
+        else:
+            this_col = 1
+            this_row = self.numrows
+            for header in  self.heading_row:
+                cell = ws.cell(row = this_row, column = this_col)
+                cell.value = header
+                cell.font = Font(size=16)
+                if ws.column_dimensions[get_column_letter(this_col)].width < len(str(header)):
+                    ws.column_dimensions[get_column_letter(this_col)].width = len(str(header)) + 4
+                this_col += 1
+        self.numrows += 1
+        self.worksheet = ws
         
     def reporttofile(self, crawl_report):
         """
@@ -322,7 +343,7 @@ class ExcelLog(Log):
         self.writerow(['Broken urls found:', self.crawl_report.statistics['broken_count']])
         
         #write in url_data from crawl_report
-        self.writerow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
+        self.headingrow(['STATUS', 'REASON', 'MIMETYPE', 'URL', 'PARENT'])
         for report in self.crawl_report.url_reports:
             self.writerow([report.status, report.reason, report.mimetype, report.url, report.parent_url])
         
