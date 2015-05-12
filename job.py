@@ -1,15 +1,5 @@
 import crol, logs, actions
 
-class Job:
-    """
-    Class description.
-    """
-    
-    visited_urls = set([])
-    
-    def __init__(self):
-        pass
-
 
 class CrawlJob(crol.GenericType):
     """
@@ -32,7 +22,6 @@ class CrawlJob(crol.GenericType):
         
         if not isinstance(self.log, logs.WebLog):
             self.setprop('log', logs.WebLog(self.log or {}))
-            self.registration.setprop('log', self.log)
     
     def go(self):
         """
