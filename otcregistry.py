@@ -1,23 +1,26 @@
 
 registry_data = {
     'registrations' : [
-        {
-            'site' : 'https://www.otc.edu/FORMS/webtesting/emptyLink/',
-            'department' : {
-                'name' : 'Crol Testing',
-                'main_email' : 'broughtb@otc.edu',
-                'email_group' : ['broughtb@otc.edu']
-            },
-            'actions': []
-        },
+        #{
+        #    'site' : 'https://www.otc.edu/FORMS/webtesting/emptyLink/',
+        #    'department' : {
+        #        'name' : 'Crol Testing',
+        #        'main_email' : 'wrighta@otc.edu',
+        #        'email_group' : ['wrighta@otc.edu']
+                #'main_email' : 'wrighta@otc.edu',
+                #'email_group' : ['wrighta@otc.edu']
+        #    },
+        #    'actions': []
+        #},
         {
             'site' : 'http://www.otc.edu/webservices',
             'department' : {
                 'name' : 'Web Services',
                 'main_email' : 'wrighta@otc.edu',
-                'email_group' : ['broughtb@otc.edu','lamelzag@otc.edu']
+                'email_group' : ['wrighta@otc.edu']
+                #'email_group' : ['broughtb@otc.edu','lamelzag@otc.edu']
             },
-            'actions' : []
+            'actions' : ['email']
         },
         #{
         #    'site' : 'http://www.otc.edu/news/',
