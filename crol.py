@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
 from datetime import datetime
 import re, httplib
+from pprint import pprint
 
 
 class GenericType(object):
@@ -220,10 +221,8 @@ class Node(GenericType):
     
     def normalize(self, link):
         """
-        Take a string link similar to /admissions
-        Return a valid url like http://otc.edu/admissions
-        Use urlparse to get the pieces of the link.
-        If essential components (scheme, netloc) are missing, attempt to use those from parent node
+        Take a relative link and turn it into an absolute link, based on the current node.
+        Follows browser behavior, not necessarily up to speecification (http://www.ietf.org/rfc/rfc2396.txt)
         """
         
         #empty link
@@ -234,33 +233,38 @@ class Node(GenericType):
         generated_path = False #replace by a generated path, when relative link is evaluated
 
         #if the link has a scheme, treat as absolute url
-        if new_parsed.scheme == '':
+        if new_parsed.scheme != '':
+            return link
             
-            if new_parsed.path == '' or new_parsed.path.startswith('/'):
+        else:
+            
+            if new_parsed.path == '' or new_parsed.path == '/':
                 pass
-            else:
-                #evaluating path for relative links
+            else:#evaluating path for relative links
                 current_path_stack = re.split('/', self.urlparse.path)
+                current_path_stack.pop()#last path string will either be empty string or filename
                 new_path_stack = re.split('/', new_parsed.path)
-                generated_path_stack = current_path_stack
+                generated_path_stack = [] if new_parsed.path.startswith('/') else current_path_stack
                 
-                #pop(0) is the same as popleft()
-                while new_path_stack:
-                    new_path_bit = new_path_stack.pop(0)
-                    if new_path_bit == '.':
-                        pass
-                    elif new_path_bit == '..':
-                        generated_path_stack.pop()
-                    else:
-                        generated_path_stack.append(new_path_bit)
+                for new_path_bit in new_path_stack:
+                    try:
+                        if new_path_bit == '.': #or new_path_bit == '':
+                            pass
+                        elif new_path_bit == '..':
+                            generated_path_stack.pop()
+                        else:
+                            generated_path_stack.append(new_path_bit)
+                    except IndexError:
+                        pass#popping from empty stack is ok
                 
-                generated_path = '/'.join(generated_path_stack)
-        
+                generated_path = '/'.join(generated_path_stack).replace('//', '/')
+                if not generated_path.startswith('/'): generated_path = '/' + generated_path
+            
             try:
                 normal_bits = [
                     self.urlparse.scheme + '://',
                     self.urlparse.netloc,
-                    generated_path or new_parsed.path,
+                    generated_path if generated_path is not False else new_parsed.path,
                     #';'+new_parsed.params,
                     '?'+new_parsed.query if new_parsed.query else '',
                     #'#'+new_parsed.fragment
@@ -269,9 +273,6 @@ class Node(GenericType):
                 raise Exception("Could not normalize url. Url is mal-formed, or a relative url without a parent node. ORIGINAL ERROR: "+AEX.message)
             
             return ''.join(normal_bits)
-            
-        else:
-            return link
     
     def request(self):
         """
