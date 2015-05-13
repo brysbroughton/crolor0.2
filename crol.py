@@ -2,6 +2,7 @@ from bs4 import BeautifulSoup as bs
 from urlparse import urlparse
 from datetime import datetime
 import re, httplib
+from pprint import pprint
 
 
 class GenericType(object):
@@ -191,14 +192,14 @@ class Node(GenericType):
         self.props = {
             'type' : 'node',
             'url' : None,
-            'response' : None,#replace by response object from httplib
+            'response' : None,
             'urlparse' : None,
             'headers' : None,
             'mimetype' : None,
             'status' : None,
             'reason' : None,
             'links' : [],
-            'parent': None,#'HEAD'
+            'parent': None,
             'children' : []
         }
         
@@ -220,49 +221,58 @@ class Node(GenericType):
     
     def normalize(self, link):
         """
-        Take a string link similar to /admissions
-        Return a valid url like http://otc.edu/admissions
-        Use urlparse to get the pieces of the link.
-        If essential components (scheme, netloc) are missing, attempt to use those from parent node
+        Take a relative link and turn it into an absolute link, based on the current node.
+        Follows browser behavior, not necessarily up to speecification (http://www.ietf.org/rfc/rfc2396.txt)
         """
         
+        #empty link
         if link is None or len(link) == 0:
             return ''
             
-        link = link.strip()#remove whitespace from ends
-        
         new_parsed = urlparse(link)
+        generated_path = False #replace by a generated path, when relative link is evaluated
 
-        if new_parsed.scheme == 'mailto':
+        #if the link has a scheme, treat as absolute url
+        if new_parsed.scheme != '':
             return link
-
-        #relative paths are tricky
-        new_path = new_parsed.path
-        new_link = []
-        
-        try:
-            if new_path.startswith('/'):
+            
+        else:
+            
+            if new_parsed.path == '' or new_parsed.path == '/':
                 pass
-            else:#link with no leading slash should be sub-link of current directory
-                if self.urlparse:
-                    old_path_bits = re.split('/', self.urlparse.path)
-                    if '.' in old_path_bits[-1]:#url ends with a filename
-                        new_path_bits = old_path_bits[:-1] + [new_path]
-                        new_path = '/'.join(new_path_bits)
-                    else:
-                        new_path = (self.urlparse.path + '/' + new_parsed.path).replace('//','/')
-            new_link = [
-                (new_parsed.scheme or self.urlparse.scheme) + '://',
-                new_parsed.netloc or self.urlparse.netloc,
-                new_path,
-                #';'+new_parsed.params,
-                '?'+new_parsed.query if new_parsed.query else '',
-                #'#'+new_parsed.fragment
-            ]
-        except AttributeError as AEX:
-            raise Exception("Could not normalize url. Url is mal-formed, or a relative url without a parent node. ORIGINAL ERROR: "+AEX.message)
-        
-        return ''.join(new_link)
+            else:#evaluating path for relative links
+                current_path_stack = re.split('/', self.urlparse.path)
+                current_path_stack.pop()#last path string will either be empty string or filename
+                new_path_stack = re.split('/', new_parsed.path)
+                generated_path_stack = [] if new_parsed.path.startswith('/') else current_path_stack
+                
+                for new_path_bit in new_path_stack:
+                    try:
+                        if new_path_bit == '.': #or new_path_bit == '':
+                            pass
+                        elif new_path_bit == '..':
+                            generated_path_stack.pop()
+                        else:
+                            generated_path_stack.append(new_path_bit)
+                    except IndexError:
+                        pass#popping from empty stack is ok
+                
+                generated_path = '/'.join(generated_path_stack).replace('//', '/')
+                if not generated_path.startswith('/'): generated_path = '/' + generated_path
+            
+            try:
+                normal_bits = [
+                    self.urlparse.scheme + '://',
+                    self.urlparse.netloc,
+                    generated_path if generated_path is not False else new_parsed.path,
+                    #';'+new_parsed.params,
+                    '?'+new_parsed.query if new_parsed.query else '',
+                    #'#'+new_parsed.fragment
+                ]
+            except AttributeError as AEX:
+                raise Exception("Could not normalize url. Url is mal-formed, or a relative url without a parent node. ORIGINAL ERROR: "+AEX.message)
+            
+            return ''.join(normal_bits)
     
     def request(self):
         """
@@ -348,7 +358,7 @@ class Crawl(GenericType):
         self.props = {
             'type' : 'crawler',
             'seed_url' : None,
-            'node_tree' : None,#'HEAD'
+            'node_tree' : None,
             'visited_urls' : set([]),
             'crawl_report' : None,
             'log' : None,
@@ -379,10 +389,8 @@ class Crawl(GenericType):
             new_url = None
             
             #try to normalize url
-            try:
-                new_url = node.normalize(l)
-            except IOError:
-                print 'Could not normalize url: ', l
+            try: new_url = node.normalize(l)
+            except IOError: print 'Could not normalize url: ', l
                 
             if new_url: new_node = Node({'url':new_url})
             else: new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
