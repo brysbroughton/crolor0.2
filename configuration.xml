@@ -1,0 +1,42 @@
+<?xml version="1.0"?>
+<registrations>
+	<registration>
+		<site>http://www.otc.edu/webservices</site>
+		<department>
+			<name>Web Services</name>
+			<main_email>wrighta@otc.edu</main_email>
+			<email_group>
+				<member>wrighta@otc.edu</member>
+			</email_group>
+		</department>
+		<actions>
+			<action>email</action>
+		</actions>
+	</registration>
+	<registration>
+		<site>http://www.otc.edu/news</site>
+		<department>
+			<name>Public Relations</name>
+			<main_email>wrighta@otc.edu</main_email>
+			<email_group>
+				<member>wrighta@otc.edu</member>
+			</email_group>
+		</department>
+		<actions>
+			<action>email</action>
+		</actions>
+	</registration>
+	<registration>
+		<site>http://www.otc.edu/it</site>
+		<department>
+			<name>Technical Services</name>
+			<main_email>wrighta@otc.edu</main_email>
+			<email_group>
+				<member>wrighta@otc.edu</member>
+			</email_group>
+		</department>
+		<actions>
+			<action>email</action>
+		</actions>
+	</registration>
+</registrations>
