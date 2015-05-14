@@ -22,7 +22,7 @@ def emailnotify(registration, log):
     to web@otc.edu and note this.
     """
     report_location = log.path+log.filename+log.endfilename
-    msg = '<h1>Link Report</h1><p>You can review the report at: <a href="' + report_location + '">this link</a></p>'
+    msg = '<h1>Link Report</h1><p>Please review the attached report.</p>'
     subject = 'Crawl Completed'
     to_address = registration.department.main_email
     cc_address = ''
