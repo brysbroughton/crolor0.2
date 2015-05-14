@@ -437,3 +437,5 @@ class Crawl(GenericType):
             match = re.search(p, url)
             if match:
                 return True
+            else:
+                return False
