@@ -9,7 +9,8 @@ registry_data = {
                 'email_group' : ['broughtb@otc.edu','lamelzag@otc.edu']
             },
             'actions' : ['email'],
-            'nofollow_patterns' : ['^.*disclaimer.*$','^.*reddot.*$']
+            'nofollow_patterns' : ['^.*disclaimer.*$','^.*reddot.*$'],
+            'ignore_patterns' : ['^.*jpg.*$','^.*png.*$']
         },
         {
             'site' : 'http://www.otc.edu/news/',

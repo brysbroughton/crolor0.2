@@ -37,7 +37,8 @@ class CrawlJob(crol.GenericType):
             'seed_url' : self.registration.site,
             'crawl_report' : crol.CrawlReport({'seed_url':self.registration.site}),
             'log' : self.log,
-            'nofollow_patterns' : self.registration.nofollow_patterns
+            'nofollow_patterns' : self.registration.nofollow_patterns,
+            'ignore_patterns' : self.registration.ignore_patterns
         }))
         
         self.log.filename = self.registration.department.name
