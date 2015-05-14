@@ -5,8 +5,7 @@ registry_data = {
             'site' : 'http://www.otc.edu/webservices',
             'department' : {
                 'name' : 'Web Services',
-                'main_email' : 'wrighta@otc.edu',
-                'email_group' : ['broughtb@otc.edu','lamelzag@otc.edu']
+                'email_group' : ['broughtb@otc.edu','wrighta@otc.edu']
             },
             'actions' : ['email'],
             'nofollow_patterns' : ['^.*disclaimer.*$','^.*reddot.*$'],
@@ -16,7 +15,7 @@ registry_data = {
             'site' : 'http://www.otc.edu/news/',
             'department' : {
                 'name' : 'Public Relations',
-                'main_email' : 'wrighta@otc.edu',
+                'email_group' : ['wrighta@otc.edu'],
             },
             'actions' : ['crawl','log']
         },
@@ -24,7 +23,7 @@ registry_data = {
             'site' : 'http://www.otc.edu/it',
             'department' : {
                 'name' : 'Technical Services',
-                'main_email' : 'wrighta@otc.edu'
+                'email_group' : ['wrighta@otc.edu']
             },
             'actions' : ['email']
         }

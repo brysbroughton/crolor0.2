@@ -24,7 +24,7 @@ def emailnotify(registration, log):
     report_location = log.path+log.filename+log.endfilename
     msg = '<h1>Link Report</h1><p>Please review the attached report.</p>'
     subject = 'Crawl Completed'
-    to_address = registration.department.main_email
+    to_address = registration.department.email_group
     cc_address = ''
     files = [report_location]
     from_address = 'web@otc.edu'
@@ -51,7 +51,7 @@ class Email(crol.GenericType):
         'msg_body' : '',
         'subject' : '',
         'from_address' : "",
-        'to_address' : "",
+        'to_address' : [],
         'cc_address' : '',
         'files' : [],
         'filename' : '',
@@ -62,7 +62,9 @@ class Email(crol.GenericType):
         
     def send(self):
         has_cc = False
-        addresses = [self.to_address]
+        addresses = []
+        for addy in self.to_address:
+            addresses.append(addy)
         if self.props['to_address'] == "":
             raise Exception('to_address must be set in class: Email')
         elif self.props['from_address'] == "":
@@ -72,7 +74,7 @@ class Email(crol.GenericType):
             msg = MIMEMultipart()
             msg['Subject'] = self.subject
             msg['From'] = self.from_address
-            msg['To'] = self.to_address
+            msg['To'] = ", ".join(addresses)
             if self.cc_address != "":
                 msg['CC'] = self.cc_address
                 has_cc = True

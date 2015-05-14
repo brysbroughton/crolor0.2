@@ -291,7 +291,12 @@ class Node(GenericType):
         else:
             raise Exception("Node attempted to request unsupported protocol: "+self.url)
                     
-        conn.request('GET',self.urlparse.path)
+        # Checking for a query string in the url
+        # If present, add query string to url before checking status
+        if self.urlparse.query != '':
+            conn.request('GET',self.urlparse.path+"?"+self.urlparse.query)
+        else:
+            conn.request('GET',self.urlparse.path)
         response = conn.getresponse()
         self.setprop('response', response)
         self.setprop('status', response.status)
