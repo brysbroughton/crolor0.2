@@ -65,7 +65,8 @@ class Registration(GenericType):
             'type' : 'registration',
             'department' : None,
             'site' : None,
-            'actions' : []
+            'actions' : [],
+            'nofollow_patterns' : []
         }
         
         super(Registration, self).__init__(**kwargs)
@@ -362,6 +363,7 @@ class Crawl(GenericType):
             'visited_urls' : set([]),
             'crawl_report' : None,
             'log' : None,
+            'nofollow_patterns' : []
         }
         
         super(Crawl, self).__init__(**kwargs)
@@ -409,6 +411,13 @@ class Crawl(GenericType):
         #don't crawl the same url 2x
         #only crawl urls within a subsite of the input seed
         """
+        
+        for p in self.nofollow_patterns:
+            #print p
+            match = re.search(p, url)
+            if match:
+                return False
+        
         if url not in self.getprop('visited_urls'):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
