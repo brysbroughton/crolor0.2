@@ -66,7 +66,8 @@ class Registration(GenericType):
             'department' : None,
             'site' : None,
             'actions' : [],
-            'nofollow_patterns' : []
+            'nofollow_patterns' : [],
+            'ignore_patterns' : []
         }
         
         super(Registration, self).__init__(**kwargs)
@@ -363,7 +364,8 @@ class Crawl(GenericType):
             'visited_urls' : set([]),
             'crawl_report' : None,
             'log' : None,
-            'nofollow_patterns' : []
+            'nofollow_patterns' : [],
+            'ignore_patterns' : []
         }
         
         super(Crawl, self).__init__(**kwargs)
@@ -393,6 +395,10 @@ class Crawl(GenericType):
             #try to normalize url
             try: new_url = node.normalize(l)
             except IOError: print 'Could not normalize url: ', l
+
+            if new_url:
+                if self.shouldignore(new_url):
+                    continue
                 
             if new_url: new_node = Node({'url':new_url})
             else: new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
@@ -400,7 +406,6 @@ class Crawl(GenericType):
             node.children.append(new_node)
             
             if funcin: funcin(new_node)
-            
             if new_url not in self.visited_urls:
                 if self.shouldfollow(new_url):
                     self.reccrawl(new_node, funcin)
@@ -413,7 +418,6 @@ class Crawl(GenericType):
         """
         
         for p in self.nofollow_patterns:
-            #print p
             match = re.search(p, url)
             if match:
                 return False
@@ -428,3 +432,8 @@ class Crawl(GenericType):
         else:
             return False
 
+    def shouldignore(self, url):
+        for p in self.ignore_patterns:
+            match = re.search(p, url)
+            if match:
+                return True
