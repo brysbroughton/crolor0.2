@@ -7,7 +7,7 @@ registry_data = {
                 'name' : 'Web Services',
                 'email_group' : ['wrighta@otc.edu']
             },
-            'actions' : ['email'],
+            'actions' : [('excellog', 'email'), ('weblog', 'email')],
             'nofollow_patterns' : ['^.*disclaimer.*$','^.*reddot.*$'],
             'ignore_patterns' : ['^.*jpg.*$','^.*png.*$']
         },
@@ -17,7 +17,7 @@ registry_data = {
                 'name' : 'Public Relations',
                 'email_group' : ['wrighta@otc.edu'],
             },
-            'actions' : ['crawl','log']
+            'actions' : [('excellog', 'email'), ('weblog', 'asana', 'email')]
         },
         {
             'site' : 'http://www.otc.edu/it',
@@ -25,7 +25,7 @@ registry_data = {
                 'name' : 'Technical Services',
                 'email_group' : ['wrighta@otc.edu']
             },
-            'actions' : ['email']
+            'actions' : [('excellog', 'email'), ('weblog', 'email')]
         }
     ]
 }

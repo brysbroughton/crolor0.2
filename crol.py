@@ -369,7 +369,10 @@ class Crawl(GenericType):
             'visited_urls' : set([]),
             'url_nodes' : {},
             'crawl_report' : None,
-            'log' : None,
+            'logs' : {
+                'excellog' : None,
+                'weblog' : None
+            },
             'nofollow_patterns' : [],
             'ignore_patterns' : []
         }

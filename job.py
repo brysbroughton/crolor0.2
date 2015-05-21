@@ -11,7 +11,10 @@ class CrawlJob(crol.GenericType):
         self.props = {
             'type' : 'crawljob',
             'registration' : None,
-            'log' : None,
+            'logs' : {
+                'excellog' : None,
+                'weblog': None
+            },
             'crawl' : None
         }
         
@@ -19,9 +22,6 @@ class CrawlJob(crol.GenericType):
         
         if not isinstance(self.registration, crol.Registration):
             self.setprop('registration', crol.Registration(self.registration))
-        
-        if not isinstance(self.log, logs.ExcelLog):
-            self.setprop('log', logs.ExcelLog(self.log or {}))
     
     def go(self):
         """
@@ -36,15 +36,14 @@ class CrawlJob(crol.GenericType):
         self.setprop('crawl', crol.Crawl({
             'seed_url' : self.registration.site,
             'crawl_report' : crol.CrawlReport({'seed_url':self.registration.site}),
-            'log' : self.log,
             'nofollow_patterns' : self.registration.nofollow_patterns,
             'ignore_patterns' : self.registration.ignore_patterns
         }))
         
-        self.log.filename = self.registration.department.name
+        
         self.crawl.start(self.crawl.crawl_report.reportnode)
-        self.log.reporttofile(self.crawl.crawl_report)
-        if self.crawl.crawl_report.statistics['broken_count'] > 0: self.applyactions()
+        self.applyactions()
+        #if self.crawl.crawl_report.statistics['broken_count'] > 0: self.applyactions()
     
     def applyactions(self):
         """
@@ -52,5 +51,10 @@ class CrawlJob(crol.GenericType):
         """
         
         for a in self.registration.actions:
-            actions.apply(a, self.registration, self.log)
-
+            log_type = None
+            if isinstance(a, basestring):
+                actions.apply(a, self, log_type)
+            else:
+                for l in list(a):
+                    if l.endswith('log'): log_type = l
+                    actions.apply(l, self, log_type)
