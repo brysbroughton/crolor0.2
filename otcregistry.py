@@ -5,7 +5,7 @@ registry_data = {
             'site' : 'http://www.otc.edu/webservices',
             'department' : {
                 'name' : 'Web Services',
-                'email_group' : ['broughtb@otc.edu','wrighta@otc.edu']
+                'email_group' : ['wrighta@otc.edu']
             },
             'actions' : ['email'],
             'nofollow_patterns' : ['^.*disclaimer.*$','^.*reddot.*$'],

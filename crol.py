@@ -367,6 +367,7 @@ class Crawl(GenericType):
             'seed_url' : None,
             'node_tree' : None,
             'visited_urls' : set([]),
+            'url_nodes' : {},
             'crawl_report' : None,
             'log' : None,
             'nofollow_patterns' : [],
@@ -404,15 +405,21 @@ class Crawl(GenericType):
             if new_url:
                 if self.shouldignore(new_url):
                     continue
-                
-            if new_url: new_node = Node({'url':new_url})
-            else: new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
-            new_node.setprop('parent', node)
+            if not new_url and selfurl_nodes.has_key(''):
+                new_node = self.url_nodes['']
+            elif self.url_nodes.has_key(new_url):
+                new_node = self.url_nodes[new_node]
+            elif new_url:
+                new_node = Node({'url':new_url})
+                new_node.setprop('parent', node)
+            else:
+                new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
+                new_node.setprop('parent', node)
             node.children.append(new_node)
             
             if funcin: funcin(new_node)
-            if new_url not in self.visited_urls:
-                if self.shouldfollow(new_url):
+            if not self.url_nodes.has_key(new_node.url):
+                if new_url not in self.visited_urls and self.shouldfollow(new_node.url):
                     self.reccrawl(new_node, funcin)
     
     def shouldfollow(self, url):
