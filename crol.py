@@ -405,24 +405,26 @@ class Crawl(GenericType):
             if new_url:
                 if self.shouldignore(new_url):
                     continue
-            if not new_url and selfurl_nodes.has_key(''):
+            
+            if not new_url and self.url_nodes.has_key(''):
                 new_node = self.url_nodes['']
             elif self.url_nodes.has_key(new_url):
-                new_node = self.url_nodes[new_node]
+                new_node = self.url_nodes[new_url]
             elif new_url:
                 new_node = Node({'url':new_url})
                 new_node.setprop('parent', node)
             else:
                 new_node = Node({'url':'', 'status':404, 'reason':'Empty URL'})
                 new_node.setprop('parent', node)
-            node.children.append(new_node)
             
+            node.children.append(new_node)
             if funcin: funcin(new_node)
+            
             if not self.url_nodes.has_key(new_node.url):
-                if new_url not in self.visited_urls and self.shouldfollow(new_node.url):
+                if new_url not in self.visited_urls and self.shouldfollow(new_node):
                     self.reccrawl(new_node, funcin)
     
-    def shouldfollow(self, url):
+    def shouldfollow(self, node):
         """
         Take node object, return boolean
         #don't crawl the same url 2x
@@ -430,20 +432,22 @@ class Crawl(GenericType):
         """
         
         for p in self.nofollow_patterns:
-            match = re.search(p, url)
+            match = re.search(p, node.url)
             if match:
+                self.url_nodes[node.url] = node
                 return False
         
-        if url not in self.getprop('visited_urls'):
-            url = urlparse(url)
+        if node.url not in self.getprop('visited_urls'):
+            url = urlparse(node.url)
             seed = urlparse(self.getprop('seed_url'))
             if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
-                self.url_nodes[url] = node
+                self.url_nodes[node.url] = node
                 return True
             else:
-                self.url_nodes[url] = node
+                self.url_nodes[node.url] = node
                 return False
         else:
+            self.url_nodes[node.url] = node
             return False
 
     def shouldignore(self, url):
@@ -453,3 +457,4 @@ class Crawl(GenericType):
                 return True
             else:
                 return False
+
