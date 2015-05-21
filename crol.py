@@ -438,8 +438,10 @@ class Crawl(GenericType):
             url = urlparse(url)
             seed = urlparse(self.getprop('seed_url'))
             if url.netloc == seed.netloc and url.path[:len(seed.path)] == seed.path:
+                self.url_nodes[url] = node
                 return True
             else:
+                self.url_nodes[url] = node
                 return False
         else:
             return False
