@@ -297,19 +297,29 @@ class Node(GenericType):
             conn.request('GET',self.urlparse.path+"?"+self.urlparse.query)
         else:
             conn.request('GET',self.urlparse.path)
-        response = conn.getresponse()
-        self.setprop('response', response)
-        self.setprop('status', response.status)
-        self.setprop('reason', response.reason)
-        self.setprop('headers', response.getheaders())
-        #check for text/html mime type to scrape html
-        content_type = response.getheader('content-type')
-        if ';' in str(content_type): content_type = content_type.split(';')[0]
-        self.setprop('mimetype', content_type)
-        if self.mimetype is not None and 'text/html' in self.mimetype:
-            if str(self.status) != '404':
-                html_response = response.read()
-                self.setprop('links', self.scrape(html_response))
+        #try up to five times in case server closes connection too early
+        #Avoids getting a blank status line that throws an exception
+        for attempt in range(5):
+            try:
+                response = conn.getresponse()
+                self.setprop('response', response)
+                self.setprop('status', response.status)
+                self.setprop('reason', response.reason)
+                self.setprop('headers', response.getheaders())
+                #check for text/html mime type to scrape html
+                content_type = response.getheader('content-type')
+                if ';' in str(content_type): content_type = content_type.split(';')[0]
+                self.setprop('mimetype', content_type)
+                if self.mimetype is not None and 'text/html' in self.mimetype:
+                    if str(self.status) != '404':
+                        html_response = response.read()
+                        self.setprop('links', self.scrape(html_response))
+            except:
+                continue
+            else:
+                break
+
+        
     
     def scrape(self, html):
         """
